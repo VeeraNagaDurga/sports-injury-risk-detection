@@ -1,12 +1,33 @@
-# Datasets
+# Sports Injury Risk Detection - Datasets
 
-This folder contains datasets used for training and testing the AI model.
+This project uses publicly available biomechanics and human pose datasets for sports injury risk analysis.
 
-## Planned Datasets
-- Human3.6M Dataset
-- MPII Human Pose Dataset
-- COCO Keypoints Dataset
-- SportsPose Dataset
-- FIFA Injury Dataset (Reference)
+## 1. Human3.6M
+Purpose:
+- Human pose estimation
+- Joint tracking
+- Movement analysis
 
-The datasets will be downloaded and organized during development.
+## 2. MPII Human Pose
+Purpose:
+- Human body keypoint detection
+- Activity recognition
+
+## 3. COCO Keypoints
+Purpose:
+- Pose estimation
+- Human motion analysis
+
+## 4. SportsPose
+Purpose:
+- Sports-specific pose analysis
+- Athlete posture assessment
+
+## 5. FIFA Injury Dataset
+Purpose:
+- Injury trend analysis
+- Risk factor modelling
+
+Note:
+Large datasets are not stored in this repository.
+Only documentation and dataset references are maintained.

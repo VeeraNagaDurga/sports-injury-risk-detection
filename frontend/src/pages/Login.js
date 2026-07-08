@@ -1,58 +1,102 @@
 import { useState } from "react";
 import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import "../styles/auth.css";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e) => {
+    setUser({
+      ...user,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const loginUser = async (e) => {
+
     e.preventDefault();
 
     try {
+
       const response = await axios.post(
         "http://127.0.0.1:8000/login",
-        null,
-        {
-          params: {
-            email: email,
-            password: password,
-          },
-        }
+        user
       );
 
       alert(response.data.message);
-    } catch (error) {
+
+      navigate("/dashboard");
+
+    } catch {
+
       alert("Login Failed");
+
     }
+
   };
 
   return (
-    <div style={{ width: "400px", margin: "50px auto" }}>
-      <h2>Login</h2>
 
-      <form onSubmit={loginUser}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+    <div className="auth-page">
 
-        <br /><br />
+      <div className="form-card">
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <h2>Login</h2>
 
-        <br /><br />
+        <form onSubmit={loginUser}>
 
-        <button type="submit">Login</button>
-      </form>
+          <div className="form-group">
+
+            <label>Email</label>
+
+            <input
+              className="form-control"
+              type="email"
+              name="email"
+              value={user.email}
+              onChange={handleChange}
+            />
+
+          </div>
+
+          <div className="form-group">
+
+            <label>Password</label>
+
+            <input
+              className="form-control"
+              type="password"
+              name="password"
+              value={user.password}
+              onChange={handleChange}
+            />
+
+          </div>
+
+          <button className="btn" style={{ width: "100%" }}>
+            Login
+          </button>
+
+        </form>
+
+        <p style={{ marginTop: "20px" }}>
+          Don't have an account?
+          <Link to="/register"> Register</Link>
+        </p>
+
+      </div>
+
     </div>
+
   );
+
 }
 
 export default Login;

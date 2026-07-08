@@ -1,25 +1,32 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import "../styles/auth.css";
 
 function Register() {
+
   const [user, setUser] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    role: "Athlete"
   });
 
   const handleChange = (e) => {
+
     setUser({
       ...user,
       [e.target.name]: e.target.value
     });
+
   };
 
   const registerUser = async (e) => {
+
     e.preventDefault();
 
     try {
+
       const response = await axios.post(
         "http://127.0.0.1:8000/register",
         user
@@ -30,61 +37,105 @@ function Register() {
       setUser({
         name: "",
         email: "",
-        password: ""
+        password: "",
+        role: "Athlete"
       });
 
-    } catch (error) {
+    } catch {
+
       alert("Registration Failed");
-      console.log(error);
+
     }
+
   };
 
   return (
-    <div style={{ width: "400px", margin: "50px auto" }}>
-      <h2>Athlete Registration</h2>
 
-      <form onSubmit={registerUser}>
+    <div className="auth-page">
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={user.name}
-          onChange={handleChange}
-        />
+      <div className="form-card">
 
-        <br /><br />
+        <h2>Create Account</h2>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={user.email}
-          onChange={handleChange}
-        />
+        <form onSubmit={registerUser}>
 
-        <br /><br />
+          <div className="form-group">
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={user.password}
-          onChange={handleChange}
-        />
+            <label>Name</label>
 
-        <br /><br />
+            <input
+              className="form-control"
+              name="name"
+              value={user.name}
+              onChange={handleChange}
+            />
 
-        <button type="submit">Register</button>
+          </div>
 
-      </form>
+          <div className="form-group">
 
-      <br />
+            <label>Email</label>
 
-      <Link to="/login">Already have an account? Login</Link>
+            <input
+              className="form-control"
+              type="email"
+              name="email"
+              value={user.email}
+              onChange={handleChange}
+            />
+
+          </div>
+
+          <div className="form-group">
+
+            <label>Password</label>
+
+            <input
+              className="form-control"
+              type="password"
+              name="password"
+              value={user.password}
+              onChange={handleChange}
+            />
+
+          </div>
+
+          <div className="form-group">
+
+            <label>Role</label>
+
+            <select
+              className="form-control"
+              name="role"
+              value={user.role}
+              onChange={handleChange}
+            >
+              <option>Athlete</option>
+              <option>Coach</option>
+              <option>Physiotherapist</option>
+              <option>Sports Scientist</option>
+              <option>Administrator</option>
+            </select>
+
+          </div>
+
+          <button className="btn" style={{ width: "100%" }}>
+            Register
+          </button>
+
+        </form>
+
+        <p style={{ marginTop: "20px" }}>
+          Already have an account?
+          <Link to="/login"> Login</Link>
+        </p>
+
+      </div>
 
     </div>
+
   );
+
 }
 
 export default Register;

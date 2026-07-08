@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import "../styles/profile.css";
 
 function AthleteProfile() {
 
@@ -25,88 +26,67 @@ function AthleteProfile() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
+      const res = await axios.post(
         "http://127.0.0.1:8000/athlete-profile",
         profile
       );
 
-      alert(response.data.message);
+      alert(res.data.message);
 
-    } catch (error) {
-      alert("Failed to Save Profile");
-      console.log(error);
+    } catch {
+      alert("Profile Save Failed");
     }
   };
 
   return (
-    <div style={{ width: "600px", margin: "30px auto" }}>
-      <h2>Athlete Profile</h2>
 
-      <form onSubmit={saveProfile}>
+    <div className="page">
 
-        <input
-          type="text"
-          name="athlete_id"
-          placeholder="Athlete ID"
-          onChange={handleChange}
-        /><br /><br />
+      <div className="container">
 
-        <input
-          type="text"
-          name="sport_type"
-          placeholder="Sport Type"
-          onChange={handleChange}
-        /><br /><br />
+        <div className="form-card profile-card">
 
-        <input
-          type="text"
-          name="position"
-          placeholder="Position"
-          onChange={handleChange}
-        /><br /><br />
+          <h2>Athlete Profile</h2>
 
-        <input
-          type="number"
-          name="age"
-          placeholder="Age"
-          onChange={handleChange}
-        /><br /><br />
+          <form onSubmit={saveProfile} className="profile-grid">
 
-        <input
-          type="number"
-          name="height"
-          placeholder="Height (cm)"
-          onChange={handleChange}
-        /><br /><br />
+            <input className="form-control" placeholder="Athlete ID" name="athlete_id" onChange={handleChange}/>
+            <input className="form-control" placeholder="Sport Type" name="sport_type" onChange={handleChange}/>
+            <input className="form-control" placeholder="Position" name="position" onChange={handleChange}/>
+            <input className="form-control" placeholder="Age" name="age" onChange={handleChange}/>
+            <input className="form-control" placeholder="Height" name="height" onChange={handleChange}/>
+            <input className="form-control" placeholder="Weight" name="weight" onChange={handleChange}/>
 
-        <input
-          type="number"
-          name="weight"
-          placeholder="Weight (kg)"
-          onChange={handleChange}
-        /><br /><br />
+            <textarea
+              className="form-control"
+              placeholder="Injury History"
+              name="injury_history"
+              rows="4"
+              onChange={handleChange}
+            />
 
-        <textarea
-          name="injury_history"
-          placeholder="Injury History"
-          onChange={handleChange}
-        ></textarea><br /><br />
+            <textarea
+              className="form-control"
+              placeholder="Training Load"
+              name="training_load"
+              rows="4"
+              onChange={handleChange}
+            />
 
-        <input
-          type="text"
-          name="training_load"
-          placeholder="Training Load"
-          onChange={handleChange}
-        /><br /><br />
+            <button className="btn profile-btn">
+              Save Profile
+            </button>
 
-        <button type="submit">
-          Save Profile
-        </button>
+          </form>
 
-      </form>
+        </div>
+
+      </div>
 
     </div>
+
   );
+
 }
 
 export default AthleteProfile;

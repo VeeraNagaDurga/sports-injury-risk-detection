@@ -1,31 +1,69 @@
-import { Link } from "react-router-dom";
+import "../styles/dashboard.css";
+import StatCard from "../components/StatCard";
+
+import {
+  FaUsers,
+  FaVideo,
+  FaHeartbeat,
+  FaRunning
+} from "react-icons/fa";
 
 function Dashboard() {
   return (
-    <div style={{ textAlign: "center", marginTop: "40px" }}>
-      <h1>Sports Injury Risk Detection Dashboard</h1>
+    <div className="page">
+      <div className="container">
 
-      <p>Welcome to the AI-based Sports Injury Risk Detection System.</p>
+        <h1 className="dashboard-title">
+          Dashboard
+        </h1>
 
-      <div style={{ marginTop: "30px" }}>
+        <p className="dashboard-subtitle">
+          AI Sports Injury Detection Overview
+        </p>
 
-        <Link to="/athlete-profile">
-          <button style={{ margin: "10px", padding: "10px 20px" }}>
-            Athlete Profile
-          </button>
-        </Link>
+        <div className="dashboard-grid">
 
-        <Link to="/upload">
-          <button style={{ margin: "10px", padding: "10px 20px" }}>
-            Upload Video
-          </button>
-        </Link>
+          <StatCard
+            title="Athletes"
+            value="128"
+            icon={<FaUsers />}
+            color="#2563EB"
+          />
 
-        <Link to="/results">
-          <button style={{ margin: "10px", padding: "10px 20px" }}>
-            View Results
-          </button>
-        </Link>
+          <StatCard
+            title="Uploaded Videos"
+            value="63"
+            icon={<FaVideo />}
+            color="#22C55E"
+          />
+
+          <StatCard
+            title="Risk Cases"
+            value="14"
+            icon={<FaHeartbeat />}
+            color="#EF4444"
+          />
+
+          <StatCard
+            title="AI Analysis"
+            value="98%"
+            icon={<FaRunning />}
+            color="#8B5CF6"
+          />
+
+        </div>
+
+        <div className="analytics-card">
+
+          <h2>Injury Risk Analytics</h2>
+
+          <p>
+            This section will display AI charts, injury trends,
+            joint analysis, and performance statistics in
+            Milestone 2.
+          </p>
+
+        </div>
 
       </div>
     </div>

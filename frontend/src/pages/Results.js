@@ -1,51 +1,88 @@
-import { Link } from "react-router-dom";
+import "../styles/results.css";
+import {
+  FaHeartbeat,
+  FaRunning,
+  FaCheckCircle,
+  FaChartLine
+} from "react-icons/fa";
 
 function Results() {
+
   return (
-    <div style={{ width: "700px", margin: "40px auto" }}>
-      <h2>Analysis Results</h2>
 
-      <table
-        border="1"
-        cellPadding="10"
-        style={{ width: "100%", borderCollapse: "collapse" }}
-      >
-        <thead>
-          <tr>
-            <th>Parameter</th>
-            <th>Result</th>
-          </tr>
-        </thead>
+    <div className="page">
 
-        <tbody>
-          <tr>
-            <td>Sport</td>
-            <td>Running</td>
-          </tr>
+      <div className="container">
 
-          <tr>
-            <td>Risk Level</td>
-            <td>Moderate</td>
-          </tr>
+        <h1 className="dashboard-title">
+          AI Analysis Results
+        </h1>
 
-          <tr>
-            <td>Posture</td>
-            <td>Needs Improvement</td>
-          </tr>
+        <p className="dashboard-subtitle">
+          Pose Detection & Injury Risk Assessment
+        </p>
 
-          <tr>
-            <td>Recommendation</td>
-            <td>Improve Knee Alignment</td>
-          </tr>
-        </tbody>
-      </table>
+        <div className="results-grid">
 
-      <br />
+          <div className="result-card">
 
-      <Link to="/dashboard">← Back to Dashboard</Link>
+            <FaHeartbeat className="result-icon"/>
+
+            <h2>Risk Level</h2>
+
+            <h1 className="green">LOW</h1>
+
+          </div>
+
+          <div className="result-card">
+
+            <FaRunning className="result-icon"/>
+
+            <h2>Pose Frames</h2>
+
+            <h1>315</h1>
+
+          </div>
+
+          <div className="result-card">
+
+            <FaChartLine className="result-icon"/>
+
+            <h2>Detection Accuracy</h2>
+
+            <h1>98%</h1>
+
+          </div>
+
+        </div>
+
+        <div className="recommendation-card">
+
+          <FaCheckCircle className="recommend-icon"/>
+
+          <div>
+
+            <h2>AI Recommendation</h2>
+
+            <p>
+
+              Athlete posture appears stable.
+              Continue training while maintaining
+              correct knee and hip alignment.
+              No immediate injury risk detected.
+
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
 
     </div>
+
   );
+
 }
 
 export default Results;

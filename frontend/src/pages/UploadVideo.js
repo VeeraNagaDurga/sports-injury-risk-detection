@@ -1,63 +1,73 @@
 import { useState } from "react";
 import axios from "axios";
+import "../styles/upload.css";
 
 function UploadVideo() {
 
-  const [video, setVideo] = useState(null);
+  const [video,setVideo]=useState(null);
 
-  const uploadVideo = async (e) => {
+  const upload=async(e)=>{
+
     e.preventDefault();
 
-    if (!video) {
-      alert("Please select a video.");
-      return;
-    }
+    const data=new FormData();
 
-    const formData = new FormData();
-    formData.append("video", video);
+    data.append("video",video);
 
-    try {
+    try{
 
-      const response = await axios.post(
+      const res=await axios.post(
         "http://127.0.0.1:8000/upload-video",
-        formData
+        data
       );
 
-      alert(response.data.message);
+      alert(res.data.message);
 
-    } catch (error) {
+    }catch{
 
-      alert("Video Upload Failed");
-      console.log(error);
+      alert("Upload Failed");
 
     }
-  };
 
-  return (
+  }
 
-    <div style={{ width: "500px", margin: "40px auto" }}>
+  return(
 
-      <h2>Upload Sports Video</h2>
+<div className="page">
 
-      <form onSubmit={uploadVideo}>
+<div className="container">
 
-        <input
-          type="file"
-          accept="video/*"
-          onChange={(e) => setVideo(e.target.files[0])}
-        />
+<div className="upload-card">
 
-        <br /><br />
+<h2>Upload Sports Video</h2>
 
-        <button type="submit">
-          Upload Video
-        </button>
+<form onSubmit={upload}>
 
-      </form>
+<input
 
-    </div>
+type="file"
 
-  );
+accept=".mp4,.avi,.mov"
+
+onChange={(e)=>setVideo(e.target.files[0])}
+
+/>
+
+<button className="btn upload-btn">
+
+Upload Video
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+)
 
 }
 
