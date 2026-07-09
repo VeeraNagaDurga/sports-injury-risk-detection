@@ -2,8 +2,22 @@ import cv2
 import os
 import mediapipe as mp
 
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose()
+# Handle differences between MediaPipe versions. Older releases expose
+# the `solutions` API (mp.solutions.pose). Newer releases expose the
+# `tasks` API and may not provide `mp.solutions` from the top-level
+# package. If the expected API isn't available, fall back so the
+# backend can still run (pose detection will be disabled).
+pose = None
+try:
+    if hasattr(mp, "solutions"):
+        mp_pose = mp.solutions.pose
+        pose = mp_pose.Pose()
+    else:
+        # Newer MediaPipe versions don't expose `solutions` on import;
+        # leave `pose` as None so detect_pose can skip detection.
+        pose = None
+except Exception:
+    pose = None
 
 
 def detect_pose(video_path):
@@ -21,8 +35,18 @@ def detect_pose(video_path):
     detected_frames = 0
     landmarks_list = []
 
-    while True:
+    # If MediaPipe pose isn't available in this environment, skip
+    # detection and just count frames so the API can still respond.
+    if pose is None:
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+            total_frames += 1
+        cap.release()
+        return total_frames, detected_frames, landmarks_list
 
+    while True:
         success, frame = cap.read()
 
         if not success:

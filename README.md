@@ -1,3 +1,29 @@
+# Sports Injury Risk Detection
+
+Quick local run instructions.
+
+Backend
+- create a Python venv and activate it
+
+```powershell
+python -m venv .venv
+& .venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+cd backend
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Notes
+- If you add large model or media files, use Git LFS or document a download step.
+- To reproduce the backend environment exactly, consider using the provided `backend/Dockerfile`.
 # AI-Based Sports Injury Risk Detection from Video
 
 ## Project Overview

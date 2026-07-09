@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 
-from utils.video_processing import detect_pose, validate_video
+from backend.utils.video_processing import detect_pose, validate_video
 
 app = FastAPI()
 
@@ -13,7 +13,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    # During development allow all origins so frontend (localhost, 127.0.0.1,
+    # network IPs) can reach the API without CORS issues. Change to a
+    # restricted list in production.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
