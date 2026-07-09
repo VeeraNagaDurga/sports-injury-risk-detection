@@ -199,7 +199,7 @@ http://localhost:3000
 
 # 👩‍💻 Developed By
 
-**Sreeja Maganuru**
+**Veera Naga Durga Garlanka**
 
 B.Tech – Computer Science and Engineering (AI & ML)
 
