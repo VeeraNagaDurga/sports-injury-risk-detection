@@ -1,85 +1,223 @@
-# Sports Injury Risk Detection
+# 🏃 Sports Injury Risk Detection from Video
 
-Quick local run instructions.
+An AI-powered web application that analyzes athlete movement from uploaded sports videos to detect injury risks using computer vision, pose estimation, and biomechanics analysis.
 
-Backend
-- create a Python venv and activate it
+---
 
-```powershell
-python -m venv .venv
-& .venv\Scripts\Activate.ps1
-pip install -r backend/requirements.txt
-cd backend
-python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+## 📌 Project Overview
+
+Sports injuries are one of the major challenges faced by athletes across different sports. This project aims to assist athletes, coaches, physiotherapists, and sports scientists by providing an AI-based platform that analyzes body posture and movement patterns from uploaded videos to identify potential injury risks before they become severe.
+
+The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pose Estimation** to build a complete sports injury risk detection system.
+
+---
+
+## 🎯 Objectives
+
+- Detect athlete body posture from uploaded videos.
+- Perform human pose estimation using AI.
+- Track body joint movements.
+- Analyze biomechanics and movement patterns.
+- Build athlete profile management.
+- Provide injury risk analysis and recommendations.
+- Create a scalable web platform for sports analytics.
+
+---
+
+## ✨ Milestone 1 Features
+
+### ✅ Project Initialization
+
+- Project setup
+- Frontend and backend configuration
+- GitHub repository management
+
+### ✅ Authentication System
+
+- User Registration
+- User Login
+- Role-based user interface
+
+### ✅ Athlete Profile Management
+
+- Athlete Information
+- Sport Type
+- Playing Position
+- Age
+- Height
+- Weight
+- Injury History
+- Training Load
+
+### ✅ Video Upload System
+
+- Video Upload API
+- Video Validation
+- Video Processing
+- Frame Extraction
+- Pose Detection Integration
+
+### ✅ Pose Estimation
+
+- MediaPipe Pose Integration
+- Human Landmark Detection
+- Joint Tracking
+
+### ✅ Dataset Preparation
+
+- Human3.6M
+- MPII Human Pose
+- COCO Keypoints
+- SportsPose
+- FIFA Injury Dataset (Reference)
+
+---
+
+# 🛠 Technology Stack
+
+## Frontend
+
+- React.js
+- React Router
+- Axios
+- React Icons
+- CSS3
+
+## Backend
+
+- Python
+- FastAPI
+- OpenCV
+- MediaPipe
+- Pydantic
+
+## Tools
+
+- Git
+- GitHub
+- VS Code
+
+---
+
+# 📁 Project Structure
+
+```text
+sports-injury-risk-detection
+│
+├── frontend
+│   ├── src
+│   ├── public
+│   └── package.json
+│
+├── backend
+│   ├── utils
+│   ├── uploads
+│   ├── main.py
+│   └── requirements.txt
+│
+├── datasets
+│   ├── Human3.6M
+│   ├── MPII
+│   ├── COCO
+│   ├── SportsPose
+│   └── FIFA_Injury
+│
+└── README.md
 ```
 
-Frontend
+---
+
+# 🚀 How to Run
+
+## Clone Repository
+
+```bash
+git clone https://github.com/VeeraNagaDurga/sports-injury-risk-detection.git
+```
+
+---
+
+## Backend
+
+```bash
+cd backend
+
+python -m venv venv
+
+venv\Scripts\activate
+
+pip install -r requirements.txt
+
+python -m uvicorn main:app --reload
+```
+
+Backend runs at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## Frontend
 
 ```bash
 cd frontend
+
 npm install
+
 npm start
 ```
 
-Notes
-- If you add large model or media files, use Git LFS or document a download step.
-- To reproduce the backend environment exactly, consider using the provided `backend/Dockerfile`.
-# AI-Based Sports Injury Risk Detection from Video
+Frontend runs at:
 
-## Project Overview
-This project aims to develop an AI-powered platform that analyzes athlete movement videos to detect biomechanical issues, identify abnormal movement patterns, predict injury risks, and provide corrective posture recommendations.
+```text
+http://localhost:3000
+```
 
-## Objectives
-- Analyze sports videos using AI.
-- Detect human body keypoints.
-- Perform biomechanical analysis.
-- Predict injury risks.
-- Recommend corrective posture and exercises.
-- Improve athlete performance and reduce injuries.
+---
 
-## Project Workflow
-1. User Registration & Login
-2. Upload Sports Video
-3. Video Processing (OpenCV)
-4. Frame Extraction
-5. Pose Estimation (MediaPipe/OpenPose)
-6. Biomechanical Analysis
-7. Injury Risk Prediction
-8. Corrective Recommendations
-9. Dashboard & Reports
+# 📊 Current Progress
 
-## Tech Stack
+| Module | Status |
+|--------|--------|
+| Project Initialization | ✅ Completed |
+| Frontend Setup | ✅ Completed |
+| Backend Setup | ✅ Completed |
+| Authentication | ✅ Completed |
+| Athlete Profile | ✅ Completed |
+| Video Upload | ✅ Completed |
+| Pose Detection | ✅ Completed |
+| Dataset Preparation | ✅ Completed |
 
-### Frontend
-- React.js
-- JavaScript
-- HTML
-- CSS
-- Tailwind CSS
+---
 
-### Backend
-- Python
-- FastAPI
+# 🚀 Future Enhancements
 
-### Database
-- PostgreSQL
-- MongoDB
+- Joint Angle Calculation
+- Injury Risk Prediction
+- AI-Based Recommendation System
+- Performance Analytics Dashboard
+- Real-Time Pose Estimation
+- Deep Learning Injury Prediction Models
+- Coach Dashboard
+- Physiotherapist Dashboard
+- Sports Scientist Dashboard
 
-### AI & Machine Learning
-- OpenCV
-- MediaPipe
-- TensorFlow
-- PyTorch
-- YOLOv8
+---
 
-## Milestone 1
-- Project initialization
-- System architecture
-- UI wireframes
-- Frontend & Backend setup
-- Authentication setup
-- Athlete profile management
-- Dataset collection
+# 👩‍💻 Developed By
 
-## Team
-Infosys Internship Project
+**Veera Naga Durga Garlanka**
+
+B.Tech – Computer Science and Engineering (AI & ML)
+
+CMR College of Engineering & Technology
+
+---
+
+## ⭐ Project Status
+
+**Milestone 1 – Completed**
+
+This repository contains the implementation of Milestone 1 for the **Sports Injury Risk Detection from Video** project. Future milestones will include advanced pose analysis, biomechanics, injury prediction, and AI-powered analytics.
