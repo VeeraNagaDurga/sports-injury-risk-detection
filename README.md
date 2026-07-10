@@ -27,19 +27,16 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 ## ✨ Milestone 1 Features
 
 ### ✅ Project Initialization
-
 - Project setup
 - Frontend and backend configuration
 - GitHub repository management
 
 ### ✅ Authentication System
-
 - User Registration
 - User Login
 - Role-based user interface
 
 ### ✅ Athlete Profile Management
-
 - Athlete Information
 - Sport Type
 - Playing Position
@@ -50,7 +47,6 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 - Training Load
 
 ### ✅ Video Upload System
-
 - Video Upload API
 - Video Validation
 - Video Processing
@@ -58,13 +54,11 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 - Pose Detection Integration
 
 ### ✅ Pose Estimation
-
 - MediaPipe Pose Integration
 - Human Landmark Detection
 - Joint Tracking
 
 ### ✅ Dataset Preparation
-
 - Human3.6M
 - MPII Human Pose
 - COCO Keypoints
@@ -76,7 +70,6 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 # 🛠 Technology Stack
 
 ## Frontend
-
 - React.js
 - React Router
 - Axios
@@ -84,15 +77,13 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 - CSS3
 
 ## Backend
-
-- Python
 - FastAPI
+- Python
 - OpenCV
 - MediaPipe
 - Pydantic
 
 ## Tools
-
 - Git
 - GitHub
 - VS Code
@@ -101,7 +92,7 @@ The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pos
 
 # 📁 Project Structure
 
-```text
+```
 sports-injury-risk-detection
 │
 ├── frontend
@@ -151,9 +142,9 @@ pip install -r requirements.txt
 python -m uvicorn main:app --reload
 ```
 
-Backend runs at:
+Backend runs on
 
-```text
+```
 http://127.0.0.1:8000
 ```
 
@@ -169,9 +160,9 @@ npm install
 npm start
 ```
 
-Frontend runs at:
+Frontend runs on
 
-```text
+```
 http://localhost:3000
 ```
 
@@ -180,7 +171,7 @@ http://localhost:3000
 # 📊 Current Progress
 
 | Module | Status |
-|--------|--------|
+|---------|--------|
 | Project Initialization | ✅ Completed |
 | Frontend Setup | ✅ Completed |
 | Backend Setup | ✅ Completed |
