@@ -117,6 +117,14 @@ async def get_athlete_profile(athlete_id: str):
     
     return {"profile": athlete_db[athlete_id]}
 
+@app.get("/athlete-profiles")
+async def get_all_athlete_profiles():
+    """Get all saved athlete profiles"""
+    return {
+        "count": len(athlete_db),
+        "profiles": list(athlete_db.values())
+    }
+
 @app.post("/upload-video")
 async def upload_video(video: UploadFile = File(...)):
     """Upload and process a sports video"""
