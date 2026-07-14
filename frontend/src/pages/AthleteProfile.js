@@ -25,6 +25,12 @@ function AthleteProfile() {
   const saveProfile = async (e) => {
     e.preventDefault();
 
+    // Validate required fields
+    if (!profile.athlete_id || !profile.sport_type) {
+      alert("Please fill in Athlete ID and Sport Type");
+      return;
+    }
+
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/athlete-profile",
@@ -32,9 +38,23 @@ function AthleteProfile() {
       );
 
       alert(res.data.message);
+      
+      // Clear form after successful save
+      setProfile({
+        athlete_id: "",
+        sport_type: "",
+        position: "",
+        age: "",
+        height: "",
+        weight: "",
+        injury_history: "",
+        training_load: ""
+      });
 
-    } catch {
-      alert("Profile Save Failed");
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || "Profile Save Failed";
+      alert(`Error: ${errorMessage}`);
+      console.error("Save error:", error);
     }
   };
 

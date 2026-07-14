@@ -35,6 +35,19 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class AthleteProfile(BaseModel):
+    athlete_id: str
+    sport_type: str
+    position: str
+    age: str
+    height: str
+    weight: str
+    injury_history: str
+    training_load: str
+
+# Simple in-memory athlete storage (for demo purposes)
+athlete_db = {}
+
 # Routes
 @app.get("/")
 async def root():
@@ -73,6 +86,36 @@ async def login(credentials: LoginRequest):
             "role": user["role"]
         }
     }
+
+@app.post("/athlete-profile")
+async def save_athlete_profile(profile: AthleteProfile):
+    """Save athlete profile"""
+    try:
+        athlete_db[profile.athlete_id] = {
+            "athlete_id": profile.athlete_id,
+            "sport_type": profile.sport_type,
+            "position": profile.position,
+            "age": profile.age,
+            "height": profile.height,
+            "weight": profile.weight,
+            "injury_history": profile.injury_history,
+            "training_load": profile.training_load
+        }
+        
+        return {
+            "message": f"Athlete profile for {profile.athlete_id} saved successfully",
+            "profile": athlete_db[profile.athlete_id]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/athlete-profile/{athlete_id}")
+async def get_athlete_profile(athlete_id: str):
+    """Get athlete profile"""
+    if athlete_id not in athlete_db:
+        raise HTTPException(status_code=404, detail="Athlete profile not found")
+    
+    return {"profile": athlete_db[athlete_id]}
 
 @app.post("/upload-video")
 async def upload_video(video: UploadFile = File(...)):
