@@ -1,181 +1,98 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
-
-from backend.utils.video_processing import detect_pose, validate_video
+import shutil
+from pathlib import Path
 
 app = FastAPI()
 
-# ----------------------------------------------------
-# CORS Configuration
-# ----------------------------------------------------
-
+# Add CORS middleware to allow requests from React frontend
 app.add_middleware(
     CORSMiddleware,
-    # During development allow all origins so frontend (localhost, 127.0.0.1,
-    # network IPs) can reach the API without CORS issues. Change to a
-    # restricted list in production.
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ----------------------------------------------------
-# Models
-# ----------------------------------------------------
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
+# Simple in-memory user storage (for demo purposes)
+users_db = {}
+
+# Pydantic models
 class User(BaseModel):
-    name: str
+    name: str = None
     email: str
     password: str
-    role: str
+    role: str = "Athlete"
 
-
-class LoginUser(BaseModel):
+class LoginRequest(BaseModel):
     email: str
     password: str
 
-
-class AthleteProfile(BaseModel):
-    athlete_id: str
-    sport_type: str
-    position: str
-    age: int
-    height: float
-    weight: float
-    injury_history: str
-    training_load: str
-
-
-# ----------------------------------------------------
-# Home API
-# ----------------------------------------------------
-
+# Routes
 @app.get("/")
-def home():
-    return {
-        "message": "Sports Injury Risk Detection API is Running"
-    }
-
-
-# ----------------------------------------------------
-# User Registration
-# ----------------------------------------------------
+async def root():
+    return {"message": "Sports Injury Risk Detection API"}
 
 @app.post("/register")
-def register(user: User):
-    return {
-        "message": "User Registered Successfully",
-        "user": {
-            "name": user.name,
-            "email": user.email,
-            "role": user.role
-        }
+async def register(user: User):
+    """Register a new user"""
+    if user.email in users_db:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    users_db[user.email] = {
+        "name": user.name,
+        "email": user.email,
+        "password": user.password,
+        "role": user.role
     }
-
-
-# ----------------------------------------------------
-# User Login
-# ----------------------------------------------------
+    
+    return {"message": f"User {user.name} registered successfully"}
 
 @app.post("/login")
-def login(user: LoginUser):
+async def login(credentials: LoginRequest):
+    """Login user"""
+    if credentials.email not in users_db:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    user = users_db[credentials.email]
+    if user["password"] != credentials.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
     return {
-        "message": "Login Successful",
-        "email": user.email,
-        "role": "Athlete"
+        "message": "Login successful",
+        "user": {
+            "email": user["email"],
+            "name": user["name"],
+            "role": user["role"]
+        }
     }
-
-
-# ----------------------------------------------------
-# Athlete Profile
-# ----------------------------------------------------
-
-@app.post("/athlete-profile")
-def save_profile(profile: AthleteProfile):
-    return {
-        "message": "Athlete Profile Saved Successfully",
-        "profile": profile
-    }
-
-
-# ----------------------------------------------------
-# Video Upload & Processing
-# ----------------------------------------------------
 
 @app.post("/upload-video")
 async def upload_video(video: UploadFile = File(...)):
+    """Upload and process a sports video"""
+    try:
+        file_path = UPLOAD_DIR / video.filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
+        
+        return {"message": f"Video {video.filename} uploaded successfully"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # ---------------------------------------
-    # Validate File Extension
-    # ---------------------------------------
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
 
-    allowed_extensions = [".mp4", ".avi", ".mov"]
-
-    extension = os.path.splitext(video.filename)[1].lower()
-
-    if extension not in allowed_extensions:
-        return {
-            "message": "Invalid video format. Please upload MP4, AVI or MOV."
-        }
-
-    # ---------------------------------------
-    # Validate File Size
-    # ---------------------------------------
-
-    content = await video.read()
-
-    max_size = 100 * 1024 * 1024  # 100 MB
-
-    if len(content) > max_size:
-        return {
-            "message": "Video size exceeds 100 MB."
-        }
-
-    # Reset pointer after reading
-    await video.seek(0)
-
-    # ---------------------------------------
-    # Create Upload Folder
-    # ---------------------------------------
-
-    upload_folder = "uploads"
-    os.makedirs(upload_folder, exist_ok=True)
-
-    file_path = os.path.join(upload_folder, video.filename)
-
-    # ---------------------------------------
-    # Save Uploaded Video
-    # ---------------------------------------
-
-    with open(file_path, "wb") as buffer:
-        buffer.write(await video.read())
-
-    # ---------------------------------------
-    # Validate Video Quality
-    # ---------------------------------------
-
-    if not validate_video(file_path):
-        return {
-            "message": "Uploaded video is corrupted or cannot be processed."
-        }
-
-    # ---------------------------------------
-    # Pose Detection
-    # ---------------------------------------
-
-    total_frames, detected_frames, landmarks = detect_pose(file_path)
-
-    # ---------------------------------------
-    # Response
-    # ---------------------------------------
-
-    return {
-        "message": "Video Uploaded Successfully",
-        "filename": video.filename,
-        "total_frames": total_frames,
-        "pose_detected_frames": detected_frames,
-        "sample_landmarks": landmarks[:1]
-    }
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
