@@ -4,20 +4,39 @@ import mediapipe as mp
 import numpy as np
 
 # ---------------------------------------------------------
-# MediaPipe Initialization
+# MediaPipe Initialization (robust across installs)
 # ---------------------------------------------------------
 
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
+mp_pose = None
+mp_drawing = None
+pose = None
 
-pose = mp_pose.Pose(
-    static_image_mode=False,
-    model_complexity=1,
-    smooth_landmarks=True,
-    enable_segmentation=False,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
-)
+try:
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+except Exception:
+    # Some mediapipe installations expose solutions differently.
+    try:
+        from mediapipe.python import solutions as mp_solutions
+
+        mp_pose = mp_solutions.pose
+        mp_drawing = mp_solutions.drawing_utils
+    except Exception:
+        mp_pose = None
+        mp_drawing = None
+
+if mp_pose is not None:
+    try:
+        pose = mp_pose.Pose(
+            static_image_mode=False,
+            model_complexity=1,
+            smooth_landmarks=True,
+            enable_segmentation=False,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
+    except Exception:
+        pose = None
 
 # ---------------------------------------------------------
 # Video Validation
