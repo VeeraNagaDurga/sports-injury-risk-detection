@@ -1,0 +1,29 @@
+.upload-card{
+
+max-width:700px;
+
+margin:auto;
+
+background:white;
+
+padding:50px;
+
+border-radius:20px;
+
+box-shadow:0 12px 30px rgba(15,23,42,.08);
+
+text-align:center;
+
+}
+
+.upload-card input{
+
+margin:40px 0;
+
+}
+
+.upload-btn{
+
+width:100%;
+
+}
