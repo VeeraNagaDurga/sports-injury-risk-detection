@@ -70,18 +70,19 @@ function AthleteProfile() {
 
           <form onSubmit={saveProfile} className="profile-grid">
 
-            <input className="form-control" placeholder="Athlete ID" name="athlete_id" onChange={handleChange}/>
-            <input className="form-control" placeholder="Sport Type" name="sport_type" onChange={handleChange}/>
-            <input className="form-control" placeholder="Position" name="position" onChange={handleChange}/>
-            <input className="form-control" placeholder="Age" name="age" onChange={handleChange}/>
-            <input className="form-control" placeholder="Height" name="height" onChange={handleChange}/>
-            <input className="form-control" placeholder="Weight" name="weight" onChange={handleChange}/>
+            <input className="form-control" placeholder="Athlete ID" name="athlete_id" value={profile.athlete_id} onChange={handleChange}/>
+            <input className="form-control" placeholder="Sport Type" name="sport_type" value={profile.sport_type} onChange={handleChange}/>
+            <input className="form-control" placeholder="Position" name="position" value={profile.position} onChange={handleChange}/>
+            <input className="form-control" placeholder="Age" name="age" value={profile.age} onChange={handleChange}/>
+            <input className="form-control" placeholder="Height" name="height" value={profile.height} onChange={handleChange}/>
+            <input className="form-control" placeholder="Weight" name="weight" value={profile.weight} onChange={handleChange}/>
 
             <textarea
               className="form-control"
               placeholder="Injury History"
               name="injury_history"
               rows="4"
+              value={profile.injury_history}
               onChange={handleChange}
             />
 
@@ -90,6 +91,7 @@ function AthleteProfile() {
               placeholder="Training Load"
               name="training_load"
               rows="4"
+              value={profile.training_load}
               onChange={handleChange}
             />
 
