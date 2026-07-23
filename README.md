@@ -17,6 +17,7 @@ Predict potential injury risks.
 Generate injury analysis reports.
 Provide athlete profile management.
 Build a scalable sports analytics platform.
+
 ✨ Milestone 1 Features
 ✅ Project Initialization
 Project setup
@@ -49,6 +50,7 @@ MPII Human Pose
 COCO Keypoints
 SportsPose
 FIFA Injury Dataset (Reference)
+
 🚀 Milestone 2 Features
 ✅ Skeleton Tracking
 Frame-by-frame pose landmark extraction
@@ -78,6 +80,7 @@ Improved Athlete Profile
 Enhanced Upload Workflow
 Results Visualization
 Processed Video Playback
+
 🛠 Technology Stack
 Frontend
 React.js
@@ -128,6 +131,7 @@ sports-injury-risk-detection
 ├── docs
 ├── wireframes
 └── README.md
+
 🚀 How to Run
 Clone Repository
 git clone https://github.com/VeeraNagaDurga/sports-injury-risk-detection.git
@@ -155,6 +159,7 @@ npm start
 Frontend runs at:
 
 http://localhost:3000
+
 📊 Current Progress
 Module	Status
 Project Initialization	✅ Completed
