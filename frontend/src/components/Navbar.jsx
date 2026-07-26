@@ -1,23 +1,42 @@
-import { Link, useLocation } from "react-router-dom";
-import { FaRunning } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { FaRunning, FaSignOutAlt } from "react-icons/fa";
 
 function Navbar() {
-
   const location = useLocation();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    alert("Logged out successfully");
+    navigate("/login");
+  };
 
   return (
-
     <nav className="navbar">
-
       <div className="container navbar-content">
-
         <Link to="/" className="logo">
           <FaRunning />
           <span>SportsAI</span>
         </Link>
 
         <div className="nav-links">
-
           <Link
             to="/"
             style={{
@@ -27,66 +46,61 @@ function Navbar() {
             Home
           </Link>
 
-          <Link
-            to="/dashboard"
-            style={{
-              color: location.pathname === "/dashboard" ? "#2563EB" : ""
-            }}
-          >
-            Dashboard
-          </Link>
+          {user && (
+            <>
+              <Link
+                to="/dashboard"
+                style={{
+                  color: location.pathname === "/dashboard" ? "#2563EB" : ""
+                }}
+              >
+                Dashboard
+              </Link>
 
-          <Link
-            to="/athlete-profile"
-            style={{
-              color:
-                location.pathname === "/athlete-profile"
-                  ? "#2563EB"
-                  : ""
-            }}
-          >
-            Athlete
-          </Link>
+              <Link
+                to="/athlete-profile"
+                style={{
+                  color: location.pathname === "/athlete-profile" ? "#2563EB" : ""
+                }}
+              >
+                Profile
+              </Link>
 
-          <Link
-            to="/upload-video"
-            style={{
-              color:
-                location.pathname === "/upload-video"
-                  ? "#2563EB"
-                  : ""
-            }}
-          >
-            Upload
-          </Link>
-
-          <Link
-            to="/results"
-            style={{
-              color: location.pathname === "/results" ? "#2563EB" : ""
-            }}
-          >
-            Results
-          </Link>
-
+              <Link
+                to="/upload-video"
+                style={{
+                  color: location.pathname === "/upload-video" ? "#2563EB" : ""
+                }}
+              >
+                Upload
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="nav-actions">
-
-          <Link to="/login" className="btn-outline">
-            Login
-          </Link>
-
-          <Link to="/register" className="btn">
-            Register
-          </Link>
-
+          {user ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <span style={{ fontSize: "14px", fontWeight: "600", color: "#475569" }}>
+                {user.name} ({user.role})
+              </span>
+              <button onClick={handleLogout} className="btn-outline" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px" }}>
+                <FaSignOutAlt /> Logout
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="btn-outline">
+                Login
+              </Link>
+              <Link to="/register" className="btn">
+                Register
+              </Link>
+            </>
+          )}
         </div>
-
       </div>
-
     </nav>
-
   );
 }
 

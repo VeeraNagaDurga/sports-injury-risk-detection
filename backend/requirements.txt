@@ -3,6 +3,7 @@ uvicorn==0.31.0
 python-multipart==0.0.9
 pydantic==2.9.2
 opencv-python==4.10.0.82
-mediapipe==0.10.9
+mediapipe==0.10.35
 numpy==1.26.4
 scipy==1.17.1
+reportlab==4.2.5

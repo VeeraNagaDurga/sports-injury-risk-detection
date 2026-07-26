@@ -33,7 +33,13 @@ function Dashboard() {
 
   const deleteProfile = async (athlete_id) => {
     if (window.confirm(`Delete profile for ${athlete_id}?`)) {
-      setProfiles(profiles.filter(p => p.athlete_id !== athlete_id));
+      try {
+        await axios.delete(`http://127.0.0.1:8000/athlete-profile/${athlete_id}`);
+        setProfiles(profiles.filter(p => p.athlete_id !== athlete_id));
+      } catch (error) {
+        console.error("Error deleting profile:", error);
+        alert("Failed to delete profile from database");
+      }
     }
   };
 

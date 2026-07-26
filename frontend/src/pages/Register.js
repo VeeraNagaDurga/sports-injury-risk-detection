@@ -1,9 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/auth.css";
 
 function Register() {
+  const navigate = useNavigate();
 
   const [user, setUser] = useState({
     name: "",
@@ -33,6 +34,7 @@ function Register() {
       );
 
       alert(response.data.message);
+      navigate("/login");
 
       setUser({
         name: "",
