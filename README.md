@@ -1,159 +1,83 @@
-# 🏃 Sports Injury Risk Detection from Video
-
-An AI-powered web application that analyzes athlete movement from uploaded sports videos to detect injury risks using computer vision, pose estimation, biomechanics analysis, and machine learning techniques.
-
----
-
-# 📌 Project Overview
-
-Sports injuries are one of the major challenges faced by athletes across different sports. This project assists athletes, coaches, physiotherapists, and sports scientists by providing an AI-based platform that analyzes body posture and movement patterns from uploaded videos to identify potential injury risks before they become severe.
-
-The application combines **React**, **FastAPI**, **OpenCV**, and **MediaPipe Pose Estimation** to provide automated biomechanics analysis, pose tracking, injury risk prediction, processed skeleton videos, and downloadable injury assessment reports.
-
----
-
-# 🎯 Objectives
-
-- Detect athlete body posture from uploaded videos.
-- Perform AI-based human pose estimation.
-- Track body joint movements.
-- Analyze biomechanics and movement quality.
-- Predict potential injury risks.
-- Generate injury analysis reports.
-- Provide athlete profile management.
-- Build a scalable sports analytics platform.
-
----
-
-# 🚀 Milestone 1 Features
-
-## ✅ Project Initialization
-
-- Project setup
-- Frontend and backend configuration
-- GitHub repository management
-
-## ✅ Authentication System
-
-- User Registration
-- User Login
-- Role-based user interface
-
-## ✅ Athlete Profile Management
-
-- Athlete Information
-- Sport Type
-- Playing Position
-- Age
-- Height
-- Weight
-- Injury History
-- Training Load
-
-## ✅ Video Upload System
-
-- Video Upload API
-- Video Validation
-- Video Processing
-- Frame Extraction
-
-## ✅ Pose Estimation
-
-- MediaPipe Pose Integration
-- Human Landmark Detection
-- Joint Tracking
-
-## ✅ Dataset Preparation
-
-- Human3.6M
-- MPII Human Pose
-- COCO Keypoints
-- SportsPose
-- FIFA Injury Dataset (Reference)
-
----
-
-# 🚀 Milestone 2 Features
-
-## ✅ Skeleton Tracking
-
-- Frame-by-frame pose landmark extraction
-- Skeleton overlay generation
-- Browser-compatible processed video generation
-
-## ✅ Biomechanics Analysis
-
-- Joint angle calculation
-- Movement quality assessment
-- Biomechanical deviation analysis
-
-## ✅ Injury Risk Prediction
-
-- Overall injury risk scoring
-- Risk categorization
-- Weighted injury risk factors
-- Movement asymmetry detection
-
-## ✅ Video Analysis
-
-- Process uploaded sports videos
-- Generate processed skeleton videos
-- Detection rate calculation
-
-## ✅ Injury Report Generation
-
-- Athlete injury assessment
-- Injury probability calculation
-- Risk recommendations
-- Downloadable PDF report generation
-
-## ✅ Frontend Enhancements
-
-- Updated Dashboard
-- Enhanced Athlete Profile
-- Improved Upload Workflow
-- Results Visualization
-- Processed Video Playback
-
----
-
-# 🛠 Technology Stack
-
-## Frontend
-
-- React.js
-- React Router
-- Axios
-- React Icons
-- CSS3
-
-## Backend
-
-- FastAPI
-- Python
-- OpenCV
-- MediaPipe
-- Pydantic
-
-## AI & Computer Vision
-
-- MediaPipe Pose
-- OpenCV
-- Pose Estimation
-- Biomechanics Analysis
-- Injury Risk Engine
-
-## Tools
-
-- Git
-- GitHub
-- VS Code
-
----
-
-# 📁 Project Structure
-
-```text
+🚀 Milestone 3 Features
+✅ Asynchronous AI Video Processing
+Background video processing using FastAPI BackgroundTasks
+Non-blocking upload workflow
+Users can navigate while AI processing continues
+Analysis status tracking
+Automatic results retrieval
+✅ User Authentication & Security
+JWT Authentication
+Role-based authentication
+Forgot Password via Email OTP
+Secure password hashing
+Protected API endpoints
+✅ PostgreSQL Database Integration
+PostgreSQL database
+SQLAlchemy ORM
+Persistent storage
+User management
+Athlete profiles
+Videos
+Analysis results
+Reports
+✅ Modular Backend Architecture
+Service-based architecture
+Router-based API design
+CRUD layer
+Database abstraction
+Separation of concerns
+✅ AI Injury Intelligence Pipeline
+Pose Estimation
+Skeleton Tracking
+Biomechanics Analysis
+Movement Quality Analysis
+Injury Risk Prediction
+Risk Scoring
+Corrective Recommendations
+PDF Report Generation
+✅ AI Analysis Storage
+Save uploaded videos
+Save processed skeleton videos
+Save injury analysis
+Save reports
+Save recommendations
+Analysis history
+✅ Dashboard Improvements
+Dashboard statistics
+Analysis history
+Processed video viewing
+Report downloads
+Database-driven data
+🛠 Technology Stack
+Frontend
+React.js
+React Router
+Axios
+React Icons
+CSS3
+Backend
+FastAPI
+Python
+SQLAlchemy
+PostgreSQL
+Pydantic
+Passlib
+JWT Authentication
+AI & Computer Vision
+MediaPipe Pose
+OpenCV
+Pose Estimation
+Skeleton Tracking
+Biomechanics Analysis
+Injury Risk Engine
+Database
+PostgreSQL
+SQLAlchemy ORM
+Tools
+Git
+GitHub
+VS Code
+📁 Project Structure
 sports-injury-risk-detection
 │
 ├── frontend
@@ -162,6 +86,26 @@ sports-injury-risk-detection
 │   └── package.json
 │
 ├── backend
+│   ├── database
+│   │   ├── database.py
+│   │   ├── models.py
+│   │   ├── schemas.py
+│   │   └── crud.py
+│   │
+│   ├── routers
+│   │   ├── auth.py
+│   │   ├── athlete.py
+│   │   ├── upload.py
+│   │   ├── analysis.py
+│   │   └── report.py
+│   │
+│   ├── services
+│   │   ├── analysis_service.py
+│   │   ├── auth_service.py
+│   │   ├── dashboard_service.py
+│   │   ├── report_service.py
+│   │   └── video_service.py
+│   │
 │   ├── utils
 │   │   ├── biomechanics.py
 │   │   ├── injury_risk_engine.py
@@ -169,6 +113,7 @@ sports-injury-risk-detection
 │   │   ├── pose_estimation.py
 │   │   ├── report_generator.py
 │   │   └── skeleton_tracking.py
+│   │
 │   ├── uploads
 │   ├── processed_videos
 │   ├── reports
@@ -180,124 +125,72 @@ sports-injury-risk-detection
 ├── docs
 ├── wireframes
 └── README.md
-```
+📊 Current Progress
+Module	Status
+Project Initialization	✅ Completed
+User Authentication	✅ Completed
+Forgot Password (OTP)	✅ Completed
+Athlete Profile Management	✅ Completed
+PostgreSQL Integration	✅ Completed
+Video Upload System	✅ Completed
+Asynchronous Video Processing	✅ Completed
+Pose Estimation	✅ Completed
+Skeleton Tracking	✅ Completed
+Biomechanics Analysis	✅ Completed
+Movement Quality Analysis	✅ Completed
+Injury Risk Prediction	✅ Completed
+Risk Scoring	✅ Completed
+Corrective Recommendations	✅ Completed
+Processed Video Generation	✅ Completed
+PDF Report Generation	✅ Completed
+Analysis History	✅ Completed
+Results Dashboard	✅ Completed
+🚀 Future Enhancements
+Admin Analytics Dashboard
+Coach Dashboard
+Physiotherapist Dashboard
+Sports Scientist Dashboard
+Role-Based Athlete Access
+Athlete-Coach Collaboration
+Multi-athlete comparison
+Real-time pose estimation
+Deep Learning Injury Prediction
+Cloud Deployment
+Advanced Sports Analytics
+Performance Trend Analysis
+⭐ Project Status
+✅ Milestone 3 – Completed
 
----
+This repository contains the implementation of Milestone 1, Milestone 2, and Milestone 3 of the Sports Injury Risk Detection from Video project.
 
-# 🚀 How to Run
+Implemented Features
+User Registration & Login
+JWT Authentication
+Forgot Password via Email OTP
+Athlete Profile Management
+PostgreSQL Database Integration
+Video Upload & Processing
+Asynchronous AI Video Processing
+AI-Based Pose Estimation
+Skeleton Tracking
+Biomechanics Analysis
+Movement Quality Assessment
+Injury Risk Prediction
+Overall Risk Scoring
+Corrective Recommendations
+Processed Skeleton Video Generation
+Downloadable PDF Injury Reports
+Analysis History Management
+Interactive Results Dashboard
+Modular FastAPI Backend Architecture
 
-## Clone Repository
+Milestone 4 will focus on:
 
-```bash
-git clone https://github.com/VeeraNagaDurga/sports-injury-risk-detection.git
-```
-
-## Backend
-
-```bash
-cd backend
-
-python -m venv .venv
-
-.venv\Scripts\activate
-
-pip install -r requirements.txt
-
-uvicorn main:app --reload
-```
-
-Backend runs at:
-
-```
-http://127.0.0.1:8000
-```
-
----
-
-## Frontend
-
-```bash
-cd frontend
-
-npm install
-
-npm start
-```
-
-Frontend runs at:
-
-```
-http://localhost:3000
-```
-
----
-
-# 📊 Current Progress
-
-| Module | Status |
-|---------|--------|
-| Project Initialization | ✅ Completed |
-| Authentication | ✅ Completed |
-| Athlete Profile Management | ✅ Completed |
-| Video Upload System | ✅ Completed |
-| Pose Estimation | ✅ Completed |
-| Skeleton Tracking | ✅ Completed |
-| Biomechanics Analysis | ✅ Completed |
-| Injury Risk Prediction | ✅ Completed |
-| Processed Video Generation | ✅ Completed |
-| PDF Report Generation | ✅ Completed |
-| Results Dashboard | ✅ Completed |
-
----
-
-# 🚀 Future Enhancements
-
-- Real-time pose estimation
-- Deep learning injury prediction models
-- AI-powered recommendation system
-- Performance analytics dashboard
-- Coach dashboard
-- Physiotherapist dashboard
-- Sports scientist dashboard
-- Multi-athlete comparison
-- Cloud deployment
-- Advanced biomechanics analytics
-
----
-
-# 👩‍💻 Developed By
-
-**Veera Naga Durga Garlanka**
-
-**B.Tech – Computer Science and Engineering (AI & ML)**
-
-**CMR College of Engineering & Technology**
-
----
-
-# ⭐ Project Status
-
-## ✅ Milestone 2 – Completed
-
-This repository contains the implementation of **Milestone 1** and **Milestone 2** of the **Sports Injury Risk Detection from Video** project.
-
-Implemented features include:
-
-- Athlete Authentication
-- Athlete Profile Management
-- Video Upload & Processing
-- AI-Based Pose Estimation
-- Skeleton Tracking
-- Biomechanics Analysis
-- Injury Risk Prediction
-- Processed Skeleton Video Generation
-- Downloadable PDF Injury Report
-- Interactive Results Dashboard
-
-Future milestones will focus on advanced AI models, real-time pose estimation, cloud deployment, and sports performance analytics.
-
----
-
-## 📄 License
-
-This project was developed as part of the **Infosys Springboard Internship Program** for educational and research purposes.
+Admin Analytics Dashboard
+Role-Based Collaboration (Athlete, Coach, Physiotherapist, Sports Scientist)
+Platform-wide Analytics & Visualization
+Advanced AI Models
+Cloud Deployment
+Real-time Video Analysis
+Performance Monitoring
+Production Optimization
