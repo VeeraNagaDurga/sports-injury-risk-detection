@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/api";
 import { useNavigate } from "react-router-dom";
 import { FaCloudUploadAlt, FaCircleNotch, FaUserCircle } from "react-icons/fa";
 import "../styles/upload.css";
@@ -13,11 +13,13 @@ function UploadVideo() {
  
   // Fetch profiles on mount so the video can be associated with an athlete -
   // this matters because the injury risk engine uses the athlete's
-  // injury_history and training_load to weight the risk score.
+  // injury_history and training_load to weight the risk score, AND because
+  // the backend now requires an athlete_id to determine who owns this
+  // video/analysis (multi-user isolation - see note on uploadVideo below).
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/athlete-profiles");
+        const res = await api.get("/athlete-profiles");
         setProfiles(res.data.profiles || []);
         if (res.data.profiles && res.data.profiles.length > 0) {
           setSelectedAthleteId(res.data.profiles[0].athlete_id);
@@ -36,20 +38,27 @@ function UploadVideo() {
       return;
     }
  
+    // CHANGED: athlete selection is no longer optional. The backend requires
+    // athlete_id on every upload so it can verify the athlete belongs to the
+    // logged-in user before processing - without this, there's no way to
+    // determine who owns the resulting video/analysis/report.
+    if (!selectedAthleteId) {
+      alert("Please select or create an athlete profile first");
+      return;
+    }
+ 
     const selectedProfile = profiles.find((p) => p.athlete_id === selectedAthleteId);
     const athleteName = selectedProfile ? selectedProfile.athlete_id : "Athlete";
  
     const data = new FormData();
     data.append("video", video);
     data.append("athlete_name", athleteName);
-    if (selectedAthleteId) {
-      data.append("athlete_id", selectedAthleteId);
-    }
+    data.append("athlete_id", selectedAthleteId);
  
     setLoading(true);
  
     try {
-      const res = await axios.post("http://127.0.0.1:8000/upload-video", data);
+      const res = await api.post("/upload-video", data);
       setLoading(false);
       navigate(`/results?analysis_id=${encodeURIComponent(res.data.analysis_id)}`);
     } catch (error) {
@@ -77,12 +86,12 @@ function UploadVideo() {
             <form onSubmit={uploadVideo}>
               <div className="athlete-select-group">
                 <label style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", marginBottom: "8px" }}>
-                  <FaUserCircle /> Select Athlete Profile (optional)
+                  <FaUserCircle /> Select Athlete Profile
                 </label>
                 {profiles.length === 0 ? (
                   <div className="no-profiles-warning">
-                    No athlete profiles created yet. You can still upload without one -
-                    the risk score will just be based on this session's movement alone.
+                    No athlete profiles created yet. Please create one in the{" "}
+                    <a href="/athlete-profile" style={{ color: "#2563EB", fontWeight: "600" }}>Profile Page</a> first.
                   </div>
                 ) : (
                   <select
@@ -90,7 +99,6 @@ function UploadVideo() {
                     value={selectedAthleteId}
                     onChange={(e) => setSelectedAthleteId(e.target.value)}
                   >
-                    <option value="">No profile (generic "Athlete")</option>
                     {profiles.map((p) => (
                       <option key={p.athlete_id} value={p.athlete_id}>
                         {p.athlete_id} ({p.sport_type} - {p.position})
@@ -128,8 +136,8 @@ function UploadVideo() {
               <button
                 type="submit"
                 className="btn upload-btn"
-                disabled={!video}
-                style={{ opacity: !video ? 0.6 : 1 }}
+                disabled={!video || !selectedAthleteId}
+                style={{ opacity: (!video || !selectedAthleteId) ? 0.6 : 1 }}
               >
                 Start AI Pose Analysis
               </button>

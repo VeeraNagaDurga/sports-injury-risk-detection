@@ -22,7 +22,11 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    // FIX: was removeItem("token") - the key Login.js actually stores under
+    // is "access_token". Removing the wrong key left the real token sitting
+    // in localStorage after "logout", so api.js would keep attaching it to
+    // requests as if the user were still signed in.
+    localStorage.removeItem("access_token");
     setUser(null);
     alert("Logged out successfully");
     navigate("/login");
