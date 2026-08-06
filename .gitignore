@@ -4,6 +4,7 @@
 backend/venv311/
 backend/.venv/
 .venv/
+.venv copy/
 venv/
 env/
 ENV/
@@ -14,16 +15,22 @@ venv.bak/
 # Python
 # -----------------------------
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *$py.class
 *.so
 *.log
+*.sqlite3
 
 # -----------------------------
 # Environment Variables
 # -----------------------------
 .env
 .envrc
+backend/.env
+**/.env
 
 # -----------------------------
 # VS Code / IDE
@@ -42,12 +49,19 @@ frontend/node_modules/
 build/
 dist/
 frontend/build/
+frontend/.eslintcache
 
 # -----------------------------
-# Uploads
+# Generated project artifacts
 # -----------------------------
 backend/uploads/
+backend/processed_videos/
+backend/reports/
 uploads/
+processed_videos/
+reports/
+backend.zip
+*.zip
 
 # -----------------------------
 # Video Files
