@@ -1,11 +1,13 @@
-🏃 Sports Injury Risk Detection from Video
+# 🏃 Sports Injury Risk Detection from Video
 
 An AI-powered web application that analyzes athlete movement from
-uploaded sports videos to detect potential injury risks using Computer
-Vision, Pose Estimation, Biomechanics Analysis, and
-Artificial Intelligence.
+uploaded sports videos to detect potential injury risks using **Computer
+Vision**, **Pose Estimation**, **Biomechanics Analysis**, and
+**Artificial Intelligence**.
 
-📌 Project Overview
+------------------------------------------------------------------------
+
+# 📌 Project Overview
 
 Sports injuries are one of the major challenges faced by athletes across
 different sports. This project assists athletes, coaches,
@@ -14,301 +16,217 @@ platform that analyzes body posture and movement patterns from uploaded
 sports videos to identify potential injury risks before they become
 severe.
 
-The application combines React, FastAPI, OpenCV,
-MediaPipe, PostgreSQL, and Google Gemini AI to provide
+The application combines **React**, **FastAPI**, **OpenCV**,
+**MediaPipe**, **PostgreSQL**, and **Google Gemini AI** to provide
 automated biomechanics analysis, pose tracking, injury risk prediction,
 processed skeleton videos, downloadable reports, asynchronous AI video
 processing, secure access control, and an AI-powered chat assistant.
 
-The system also supports containerized deployment using Docker and
-Docker Compose.
+The system also supports containerized deployment using **Docker and
+Docker Compose**.
 
-🎯 Objectives
+------------------------------------------------------------------------
 
-Detect athlete body posture from uploaded sports videos.
+# 🎯 Objectives
 
-Perform AI-based pose estimation.
+-   Detect athlete body posture from uploaded sports videos.
+-   Perform AI-based pose estimation.
+-   Track body joint movements.
+-   Analyze biomechanics and movement quality.
+-   Predict potential injury risks.
+-   Generate downloadable injury assessment reports.
+-   Manage athlete profiles securely.
+-   Store analysis history in PostgreSQL.
+-   Provide role-based access to athlete data.
+-   Allow controlled athlete data sharing.
+-   Provide an AI-powered chat assistant for authorized analysis data.
+-   Support Google authentication.
+-   Containerize the complete application using Docker.
+-   Build a scalable sports injury intelligence platform.
 
-Track body joint movements.
+------------------------------------------------------------------------
 
-Analyze biomechanics and movement quality.
+# 🚀 Milestone 1 Features
 
-Predict potential injury risks.
+## ✅ Project Initialization
 
-Generate downloadable injury assessment reports.
+-   Project setup
+-   GitHub repository
+-   Frontend & Backend configuration
 
-Manage athlete profiles securely.
+## ✅ Authentication System
 
-Store analysis history in PostgreSQL.
+-   User Registration
+-   User Login
+-   JWT Authentication
+-   Forgot Password via Email OTP
+-   Password Hashing
 
-Provide role-based access to athlete data.
+## ✅ Athlete Profile Management
 
-Allow controlled athlete data sharing.
+-   Athlete Information
+-   Sport Type
+-   Playing Position
+-   Age
+-   Height
+-   Weight
+-   Injury History
+-   Training Load
 
-Provide an AI-powered chat assistant for authorized analysis data.
+## ✅ Video Upload
 
-Support Google authentication.
+-   Video Upload API
+-   Video Validation
+-   Video Processing
+-   Frame Extraction
 
-Containerize the complete application using Docker.
+## ✅ Pose Estimation
 
-Build a scalable sports injury intelligence platform.
+-   MediaPipe Pose Integration
+-   Human Landmark Detection
+-   Joint Tracking
 
-🚀 Milestone 1 Features
+## ✅ Dataset Preparation
 
-✅ Project Initialization
+-   Human3.6M
+-   MPII Human Pose
+-   COCO Keypoints
+-   SportsPose
+-   FIFA Injury Dataset (Reference)
 
-Project setup
+------------------------------------------------------------------------
 
-GitHub repository
+# 🚀 Milestone 2 Features
 
-Frontend & Backend configuration
+## ✅ Skeleton Tracking
 
-✅ Authentication System
+-   Frame-by-frame pose landmark extraction
+-   Skeleton overlay generation
+-   Browser-compatible processed videos
 
-User Registration
+## ✅ Biomechanics Analysis
 
-User Login
+-   Joint Angle Calculation
+-   Movement Quality Assessment
+-   Biomechanical Deviation Analysis
 
-JWT Authentication
+## ✅ Injury Risk Prediction
 
-Forgot Password via Email OTP
+-   Overall Risk Score
+-   Risk Categorization
+-   Weighted Risk Factors
+-   Movement Asymmetry Detection
 
-Password Hashing
+## ✅ Video Analysis
 
-✅ Athlete Profile Management
+-   Process Uploaded Videos
+-   Skeleton Video Generation
+-   Detection Rate Calculation
 
-Athlete Information
+## ✅ Injury Report Generation
 
-Sport Type
+-   Athlete Assessment
+-   Injury Probability
+-   Corrective Recommendations
+-   PDF Report Generation
 
-Playing Position
+## ✅ Frontend Enhancements
 
-Age
+-   Dashboard
+-   Athlete Profile
+-   Upload Workflow
+-   Results Visualization
+-   Processed Video Playback
 
-Height
+------------------------------------------------------------------------
 
-Weight
+# 🚀 Milestone 3 Features
 
-Injury History
+## ✅ PostgreSQL Database Integration
 
-Training Load
+-   PostgreSQL Database
+-   SQLAlchemy ORM
+-   Persistent Storage
+-   Users
+-   Athlete Profiles
+-   Videos
+-   Analysis Results
+-   Reports
 
-✅ Video Upload
+## ✅ User Authentication & Security
 
-Video Upload API
+-   JWT Authentication
+-   Role-Based Authentication
+-   Forgot Password via Email OTP
+-   Secure Password Hashing
+-   Protected API Endpoints
 
-Video Validation
+## ✅ Asynchronous AI Video Processing
 
-Video Processing
+-   FastAPI BackgroundTasks
+-   Non-blocking Upload Workflow
+-   Background AI Processing
+-   Analysis Status Tracking
+-   Automatic Result Retrieval
 
-Frame Extraction
+## ✅ AI Injury Intelligence Pipeline
 
-✅ Pose Estimation
+-   Pose Estimation
+-   Skeleton Tracking
+-   Biomechanics Analysis
+-   Movement Quality Analysis
+-   Injury Risk Prediction
+-   Risk Scoring
+-   Corrective Recommendations
+-   PDF Report Generation
 
-MediaPipe Pose Integration
+## ✅ Modular Backend Architecture
 
-Human Landmark Detection
+-   Service-Based Architecture
+-   Router-Based API Design
+-   CRUD Layer
+-   Database Abstraction
+-   Separation of Concerns
 
-Joint Tracking
+## ✅ Database Storage
 
-✅ Dataset Preparation
+-   Uploaded Videos
+-   Processed Skeleton Videos
+-   Analysis Results
+-   Injury Recommendations
+-   Reports
+-   Analysis History
 
-Human3.6M
+## ✅ Dashboard Improvements
 
-MPII Human Pose
+-   Dashboard Statistics
+-   Analysis History
+-   Processed Video Viewing
+-   Report Downloads
+-   Database-Driven Information
 
-COCO Keypoints
+------------------------------------------------------------------------
 
-SportsPose
+# 🚀 Milestone 4 Features
 
-FIFA Injury Dataset (Reference)
+## ✅ AI Chat Assistant
 
-🚀 Milestone 2 Features
+The project includes an AI-powered chat assistant using **Google Gemini
+3.6 Flash**.
 
-✅ Skeleton Tracking
+### Features
 
-Frame-by-frame pose landmark extraction
+-   Natural-language AI chat interface
+-   Gemini 3.6 Flash integration
+-   Context-aware responses
+-   Questions about the user's own analysis data
+-   Questions about analysis data shared with the user
+-   Risk score explanations
+-   Movement finding explanations
+-   Analysis comparison questions
+-   Recommendation-related questions
 
-Skeleton overlay generation
-
-Browser-compatible processed videos
-
-✅ Biomechanics Analysis
-
-Joint Angle Calculation
-
-Movement Quality Assessment
-
-Biomechanical Deviation Analysis
-
-✅ Injury Risk Prediction
-
-Overall Risk Score
-
-Risk Categorization
-
-Weighted Risk Factors
-
-Movement Asymmetry Detection
-
-✅ Video Analysis
-
-Process Uploaded Videos
-
-Skeleton Video Generation
-
-Detection Rate Calculation
-
-✅ Injury Report Generation
-
-Athlete Assessment
-
-Injury Probability
-
-Corrective Recommendations
-
-PDF Report Generation
-
-✅ Frontend Enhancements
-
-Dashboard
-
-Athlete Profile
-
-Upload Workflow
-
-Results Visualization
-
-Processed Video Playback
-
-🚀 Milestone 3 Features
-
-✅ PostgreSQL Database Integration
-
-PostgreSQL Database
-
-SQLAlchemy ORM
-
-Persistent Storage
-
-Users
-
-Athlete Profiles
-
-Videos
-
-Analysis Results
-
-Reports
-
-✅ User Authentication & Security
-
-JWT Authentication
-
-Role-Based Authentication
-
-Forgot Password via Email OTP
-
-Secure Password Hashing
-
-Protected API Endpoints
-
-✅ Asynchronous AI Video Processing
-
-FastAPI BackgroundTasks
-
-Non-blocking Upload Workflow
-
-Background AI Processing
-
-Analysis Status Tracking
-
-Automatic Result Retrieval
-
-✅ AI Injury Intelligence Pipeline
-
-Pose Estimation
-
-Skeleton Tracking
-
-Biomechanics Analysis
-
-Movement Quality Analysis
-
-Injury Risk Prediction
-
-Risk Scoring
-
-Corrective Recommendations
-
-PDF Report Generation
-
-✅ Modular Backend Architecture
-
-Service-Based Architecture
-
-Router-Based API Design
-
-CRUD Layer
-
-Database Abstraction
-
-Separation of Concerns
-
-✅ Database Storage
-
-Uploaded Videos
-
-Processed Skeleton Videos
-
-Analysis Results
-
-Injury Recommendations
-
-Reports
-
-Analysis History
-
-✅ Dashboard Improvements
-
-Dashboard Statistics
-
-Analysis History
-
-Processed Video Viewing
-
-Report Downloads
-
-Database-Driven Information
-
-🚀 Milestone 4 Features
-
-✅ AI Chat Assistant
-
-The project includes an AI-powered chat assistant using Google Gemini
-3.6 Flash.
-
-Features
-
-Natural-language AI chat interface
-
-Gemini 3.6 Flash integration
-
-Context-aware responses
-
-Questions about the user's own analysis data
-
-Questions about analysis data shared with the user
-
-Risk score explanations
-
-Movement finding explanations
-
-Analysis comparison questions
-
-Recommendation-related questions
-
-AI Data Access
+### AI Data Access
 
 The AI assistant only receives analysis information that the logged-in
 user is authorized to access.
@@ -316,79 +234,80 @@ user is authorized to access.
 The AI does not automatically receive private information belonging to
 unrelated users.
 
-Admin Restriction
+### Admin Restriction
 
 AI Chat is not available to Admin users.
 
 The restriction is implemented at:
 
-Frontend level
-
-Backend authorization level
+-   Frontend level
+-   Backend authorization level
 
 Therefore, hiding the chat button alone is not used as the security
 mechanism.
 
-✅ Google Authentication
+------------------------------------------------------------------------
+
+# ✅ Google Authentication
 
 The project supports Google-based authentication in addition to the
 existing manual email/password authentication.
 
-Features
+### Features
 
-Google Sign-Up
-
-Google Login
-
-Google Identity Services
-
-Server-side Google token verification
-
-Existing user login
-
-New Google user registration
-
-Username selection for new Google users
+-   Google Sign-Up
+-   Google Login
+-   Google Identity Services
+-   Server-side Google token verification
+-   Existing user login
+-   New Google user registration
+-   Username selection for new Google users
 
 Manual registration and login continue to be supported.
 
-✅ Unique Username System
+------------------------------------------------------------------------
+
+# ✅ Unique Username System
 
 A unique username has been added as a user-level identifier.
 
-Username Features
+### Username Features
 
-Every user has a unique username.
+-   Every user has a unique username.
+-   Username uniqueness is validated.
+-   Username is used for identifying users during access requests.
+-   Username is displayed where appropriate in user profiles.
 
-Username uniqueness is validated.
+### Important Distinction
 
-Username is used for identifying users during access requests.
-
-Username is displayed where appropriate in user profiles.
-
-Important Distinction
-
-Athlete ID is NOT replaced.
+**Athlete ID is NOT replaced.**
 
 The system maintains both:
 
+``` text
 Athlete ID → Athlete profile identification
 
 Username → Unique user identifier used for access requests
+```
 
 Example:
 
+``` text
 Athlete ID: ATH-001
 Username: athlete123
+```
 
-✅ Athlete Access Management
+------------------------------------------------------------------------
+
+# ✅ Athlete Access Management
 
 The system supports controlled sharing of athlete information.
 
-Request Access
+### Request Access
 
 Users can request access using an athlete's unique username.
 
+``` text
 Enter Athlete Username
         ↓
 Find User
@@ -398,218 +317,168 @@ Send Access Request
 Athlete Accepts / Rejects
         ↓
 Access Granted After Approval
+```
 
-Access Controls
+### Access Controls
 
-Request access using username
-
-Invalid username validation
-
-Self-request prevention
-
-Duplicate request prevention
-
-Access request approval
-
-Access request rejection
-
-Protected athlete information
-
-Authorized shared-data access
+-   Request access using username
+-   Invalid username validation
+-   Self-request prevention
+-   Duplicate request prevention
+-   Access request approval
+-   Access request rejection
+-   Protected athlete information
+-   Authorized shared-data access
 
 Access is not automatically granted when a request is created.
 
-✅ Admin Management
+------------------------------------------------------------------------
+
+# ✅ Admin Management
 
 The system provides administrative controls for managing platform users.
 
-Admin Features
+### Admin Features
 
-Admin authentication
-
-User management
-
-View registered users
-
-View user information
-
-Account status management
-
-Account revocation
+-   Admin authentication
+-   User management
+-   View registered users
+-   View user information
+-   Account status management
+-   Account revocation
 
 Admin functionality is protected using role-based authorization.
 
-✅ Dockerization
+------------------------------------------------------------------------
+
+# ✅ Dockerization
 
 The complete application has been containerized.
 
-Containers
+### Containers
 
+``` text
                  Docker Compose
                       |
           ┌───────────┼───────────┐
           ↓           ↓           ↓
       PostgreSQL    FastAPI     React/Nginx
         :5432        :8000        :3000
+```
 
-Backend Container
+### Backend Container
 
-Python 3.11
+-   Python 3.11
+-   FastAPI
+-   Uvicorn
+-   OpenCV dependencies
+-   MediaPipe dependencies
+-   FFmpeg
+-   Backend health check
 
-FastAPI
+### Frontend Container
 
-Uvicorn
+-   Node.js build environment
+-   React production build
+-   Nginx
+-   Frontend health check
 
-OpenCV dependencies
+### Database Container
 
-MediaPipe dependencies
+-   PostgreSQL 16 Alpine
+-   Persistent PostgreSQL volume
+-   Database health check
 
-FFmpeg
-
-Backend health check
-
-Frontend Container
-
-Node.js build environment
-
-React production build
-
-Nginx
-
-Frontend health check
-
-Database Container
-
-PostgreSQL 16 Alpine
-
-Persistent PostgreSQL volume
-
-Database health check
-
-Docker Compose
+### Docker Compose
 
 Docker Compose manages:
 
-Frontend
+-   Frontend
+-   Backend
+-   PostgreSQL
+-   Service dependencies
+-   Health checks
+-   Persistent database storage
+-   Network configuration
 
-Backend
+------------------------------------------------------------------------
 
-PostgreSQL
+# 🛠 Technology Stack
 
-Service dependencies
+## Frontend
 
-Health checks
+-   React.js
+-   React Router
+-   Axios
+-   React Icons
+-   CSS3
+-   Nginx
 
-Persistent database storage
+## Backend
 
-Network configuration
+-   FastAPI
+-   Python 3.11
+-   SQLAlchemy
+-   PostgreSQL
+-   Pydantic
+-   Passlib
+-   JWT Authentication
+-   Uvicorn
 
-🛠 Technology Stack
+## AI & Computer Vision
 
-Frontend
+-   Google Gemini API
+-   Gemini 3.6 Flash
+-   OpenCV
+-   MediaPipe Pose
+-   Pose Estimation
+-   Skeleton Tracking
+-   Biomechanics Analysis
+-   Movement Quality Analysis
+-   Injury Risk Engine
 
-React.js
+## Authentication
 
-React Router
+-   JWT Authentication
+-   Google Identity Services
+-   Google Authentication
 
-Axios
+## Database
 
-React Icons
+-   PostgreSQL
+-   SQLAlchemy ORM
 
-CSS3
+## Reports
 
-Nginx
+-   ReportLab
+-   PDF Report Generation
 
-Backend
+## Video Processing
 
-FastAPI
+-   OpenCV
+-   FFmpeg
+-   MediaPipe
 
-Python 3.11
+## Deployment
 
-SQLAlchemy
+-   Docker
+-   Docker Compose
+-   Nginx
+-   PostgreSQL Container
 
-PostgreSQL
+## Tools
 
-Pydantic
+-   Git
+-   GitHub
+-   VS Code
+-   Docker Desktop
+-   WSL2
 
-Passlib
+------------------------------------------------------------------------
 
-JWT Authentication
+# 📁 Project Structure
 
-Uvicorn
-
-AI & Computer Vision
-
-Google Gemini API
-
-Gemini 3.6 Flash
-
-OpenCV
-
-MediaPipe Pose
-
-Pose Estimation
-
-Skeleton Tracking
-
-Biomechanics Analysis
-
-Movement Quality Analysis
-
-Injury Risk Engine
-
-Authentication
-
-JWT Authentication
-
-Google Identity Services
-
-Google Authentication
-
-Database
-
-PostgreSQL
-
-SQLAlchemy ORM
-
-Reports
-
-ReportLab
-
-PDF Report Generation
-
-Video Processing
-
-OpenCV
-
-FFmpeg
-
-MediaPipe
-
-Deployment
-
-Docker
-
-Docker Compose
-
-Nginx
-
-PostgreSQL Container
-
-Tools
-
-Git
-
-GitHub
-
-VS Code
-
-Docker Desktop
-
-WSL2
-
-📁 Project Structure
-
+``` text
 sports-injury-risk-detection
 │
 ├── frontend
@@ -673,95 +542,137 @@ sports-injury-risk-detection
 ├── .dockerignore
 ├── docker-compose.yml
 └── README.md
+```
 
-🚀 How to Run Locally
+------------------------------------------------------------------------
 
-Clone Repository
+# 🚀 How to Run Locally
 
+## Clone Repository
+
+``` bash
 git clone https://github.com/VeeraNagaDurga/sports-injury-risk-detection.git
 cd sports-injury-risk-detection
+```
 
-Backend
+## Backend
 
+``` bash
 cd backend
 python -m venv venv311
+```
 
-Windows
+### Windows
 
+``` powershell
 venv311\Scripts\activate
+```
 
-Install Dependencies
+### Install Dependencies
 
+``` bash
 pip install -r requirements.txt
+```
 
-Start Backend
+### Start Backend
 
+``` bash
 uvicorn main:app --reload --port 8000
+```
 
 Backend:
 
+``` text
 http://127.0.0.1:8000
+```
 
 Swagger:
 
+``` text
 http://127.0.0.1:8000/docs
+```
 
-Frontend
+## Frontend
 
 Open another terminal:
 
+``` bash
 cd frontend
 npm install
 npm start
+```
 
 Frontend:
 
+``` text
 http://localhost:3000
+```
 
-🐳 Run Using Docker
+------------------------------------------------------------------------
+
+# 🐳 Run Using Docker
 
 Make sure Docker Desktop is running.
 
 From the project root:
 
+``` bash
 docker compose up --build
+```
 
 Or:
 
+``` bash
 docker compose up -d
+```
 
 Check containers:
 
+``` bash
 docker compose ps
+```
 
 Expected:
 
+``` text
 PostgreSQL   Up (healthy)
 Backend      Up (healthy)
 Frontend     Up (healthy)
+```
 
 Frontend:
 
+``` text
 http://localhost:3000
+```
 
 Backend:
 
+``` text
 http://localhost:8000
+```
 
 Swagger:
 
+``` text
 http://localhost:8000/docs
+```
 
 Stop containers:
 
+``` bash
 docker compose down
+```
 
-🔐 Environment Configuration
+------------------------------------------------------------------------
+
+# 🔐 Environment Configuration
 
 Sensitive configuration should be stored in environment variables.
 
 Example:
 
+``` env
 DATABASE_URL=your_database_url
 SECRET_KEY=your_secret_key
 
@@ -769,49 +680,55 @@ GOOGLE_CLIENT_ID=your_google_client_id
 
 GEMINI_MODEL=gemini-3.6-flash
 GEMINI_API_KEY=your_gemini_api_key
+```
 
 Do not commit real API keys, passwords, SMTP credentials, or other
 secrets to GitHub.
 
-📊 Current Progress
+------------------------------------------------------------------------
 
-Module                           Status
+# 📊 Current Progress
 
-Authentication                   ✅ Completed
-Manual Registration & Login      ✅ Completed
-Forgot Password                  ✅ Completed
-Google Authentication            ✅ Completed
-Athlete Profile Management       ✅ Completed
-Athlete ID                       ✅ Completed
-Unique Username                  ✅ Completed
-Username-Based Access Requests   ✅ Completed
-Access Approval/Rejection        ✅ Completed
-PostgreSQL Integration           ✅ Completed
-Video Upload                     ✅ Completed
-Asynchronous Video Processing    ✅ Completed
-Pose Estimation                  ✅ Completed
-Skeleton Tracking                ✅ Completed
-Biomechanics Analysis            ✅ Completed
-Movement Quality Analysis        ✅ Completed
-Injury Risk Prediction           ✅ Completed
-Risk Scoring                     ✅ Completed
-Corrective Recommendations       ✅ Completed
-Processed Skeleton Video         ✅ Completed
-PDF Report Generation            ✅ Completed
-Analysis History                 ✅ Completed
-Results Dashboard                ✅ Completed
-Notifications                    ✅ Completed
-Admin Management                 ✅ Completed
-Account Revocation               ✅ Completed
-Gemini AI Chat                   ✅ Completed
-Admin AI Chat Restriction        ✅ Completed
-Docker Backend                   ✅ Completed
-Docker Frontend                  ✅ Completed
-PostgreSQL Docker Container      ✅ Completed
-Docker Compose                   ✅ Completed
+  Module                           Status
+  -------------------------------- --------------
+  Authentication                   ✅ Completed
+  Manual Registration & Login      ✅ Completed
+  Forgot Password                  ✅ Completed
+  Google Authentication            ✅ Completed
+  Athlete Profile Management       ✅ Completed
+  Athlete ID                       ✅ Completed
+  Unique Username                  ✅ Completed
+  Username-Based Access Requests   ✅ Completed
+  Access Approval/Rejection        ✅ Completed
+  PostgreSQL Integration           ✅ Completed
+  Video Upload                     ✅ Completed
+  Asynchronous Video Processing    ✅ Completed
+  Pose Estimation                  ✅ Completed
+  Skeleton Tracking                ✅ Completed
+  Biomechanics Analysis            ✅ Completed
+  Movement Quality Analysis        ✅ Completed
+  Injury Risk Prediction           ✅ Completed
+  Risk Scoring                     ✅ Completed
+  Corrective Recommendations       ✅ Completed
+  Processed Skeleton Video         ✅ Completed
+  PDF Report Generation            ✅ Completed
+  Analysis History                 ✅ Completed
+  Results Dashboard                ✅ Completed
+  Notifications                    ✅ Completed
+  Admin Management                 ✅ Completed
+  Account Revocation               ✅ Completed
+  Gemini AI Chat                   ✅ Completed
+  Admin AI Chat Restriction        ✅ Completed
+  Docker Backend                   ✅ Completed
+  Docker Frontend                  ✅ Completed
+  PostgreSQL Docker Container      ✅ Completed
+  Docker Compose                   ✅ Completed
 
-🔄 Complete System Workflow
+------------------------------------------------------------------------
 
+# 🔄 Complete System Workflow
+
+``` text
                     USER
                      |
           ┌──────────┴──────────┐
@@ -854,205 +771,148 @@ Docker Compose                   ✅ Completed
                   Gemini 3.6 Flash
                          ↓
               Authorized Analysis Data
+```
 
-🔒 Security & Access Control
+------------------------------------------------------------------------
+
+# 🔒 Security & Access Control
 
 The application uses multiple layers of security.
 
-Authentication
+## Authentication
 
-JWT authentication
+-   JWT authentication
+-   Password hashing
+-   Protected API endpoints
+-   Google token verification
 
-Password hashing
+## Authorization
 
-Protected API endpoints
+-   Role-based access
+-   Athlete data protection
+-   Access request approval
+-   Controlled shared-data access
 
-Google token verification
+## AI Security
 
-Authorization
+-   AI Chat restricted to authorized users
+-   Users can query their own analysis data
+-   Users can query analysis data explicitly shared with them
+-   Admin users are blocked from AI Chat
+-   Backend validates Admin restrictions
+-   Unauthorized athlete data is not provided as AI context
 
-Role-based access
+## Secrets
 
-Athlete data protection
+-   Environment variables are used for sensitive credentials.
+-   `.env` files should not be committed to GitHub.
 
-Access request approval
+------------------------------------------------------------------------
 
-Controlled shared-data access
-
-AI Security
-
-AI Chat restricted to authorized users
-
-Users can query their own analysis data
-
-Users can query analysis data explicitly shared with them
-
-Admin users are blocked from AI Chat
-
-Backend validates Admin restrictions
-
-Unauthorized athlete data is not provided as AI context
-
-Secrets
-
-Environment variables are used for sensitive credentials.
-
-.env files should not be committed to GitHub.
-
-📈 Milestone 4 Summary
+# 📈 Milestone 4 Summary
 
 Milestone 4 extends the existing injury-risk platform with:
 
-AI
-
-Gemini 3.6 Flash AI Chat Assistant
-
-Context-aware analysis conversations
-
-Authentication
-
-Google Login
-
-Google Signup
-
-Existing manual authentication
-
-Collaboration
-
-Unique usernames
-
-Username-based access requests
-
-Approval/rejection workflow
-
-Protected shared athlete data
-
-Administration
-
-Admin management
-
-Account revocation
-
-Role-based controls
-
-Admin AI Chat restriction
-
-Deployment
-
-Dockerized backend
-
-Dockerized frontend
-
-PostgreSQL container
-
-Docker Compose
-
-Health checks
-
-Persistent database storage
-
-🚀 Future Enhancements
-
-Multi-Athlete Comparison
-
-Advanced Performance Analytics
-
-Deep Learning Injury Prediction
-
-Cloud Deployment
-
-Real-Time Pose Estimation
-
-Real-Time Sports Analytics
-
-Advanced Predictive Models
-
-Larger Sports-Specific Datasets
-
-Mobile Application
-
-Advanced Coach and Physiotherapist Analytics
-
-⭐ Project Status
-
-✅ Milestone 4 Completed
-
-The project now contains the implementation of Milestones 1, 2, 3, and
-4.
-
-Core Features
-
-✅ User Registration & Login
-
-✅ JWT Authentication
-
-✅ Forgot Password via Email OTP
-
-✅ Google Authentication
-
-✅ Athlete Profile Management
-
-✅ Unique Username
-
-✅ Athlete ID
-
-✅ Username-Based Access Requests
-
-✅ Access Approval/Rejection
-
-✅ PostgreSQL Database Integration
-
-✅ Video Upload & Processing
-
-✅ Asynchronous AI Video Processing
-
-✅ Pose Estimation
-
-✅ Skeleton Tracking
-
-✅ Biomechanics Analysis
-
-✅ Movement Quality Assessment
-
-✅ Injury Risk Prediction
-
-✅ Risk Scoring
-
-✅ Corrective Recommendations
-
-✅ Processed Skeleton Video
-
-✅ Downloadable PDF Reports
-
-✅ Analysis History
-
-✅ Interactive Dashboard
-
-✅ Notifications
-
-✅ Admin Management
-
-✅ Account Revocation
-
-✅ Gemini 3.6 Flash AI Chat
-
-✅ Authorized AI Data Access
-
-✅ Admin AI Chat Restriction
-
-✅ Dockerized Backend
-
-✅ Dockerized Frontend
-
-✅ PostgreSQL Docker Container
-
-✅ Docker Compose
-
-✅ Container Health Checks
-
-👩‍💻 Developed By
-
-Veera Naga Durga Garlanka
+### AI
+
+-   Gemini 3.6 Flash AI Chat Assistant
+-   Context-aware analysis conversations
+
+### Authentication
+
+-   Google Login
+-   Google Signup
+-   Existing manual authentication
+
+### Collaboration
+
+-   Unique usernames
+-   Username-based access requests
+-   Approval/rejection workflow
+-   Protected shared athlete data
+
+### Administration
+
+-   Admin management
+-   Account revocation
+-   Role-based controls
+-   Admin AI Chat restriction
+
+### Deployment
+
+-   Dockerized backend
+-   Dockerized frontend
+-   PostgreSQL container
+-   Docker Compose
+-   Health checks
+-   Persistent database storage
+
+------------------------------------------------------------------------
+
+# 🚀 Future Enhancements
+
+-   Multi-Athlete Comparison
+-   Advanced Performance Analytics
+-   Deep Learning Injury Prediction
+-   Cloud Deployment
+-   Real-Time Pose Estimation
+-   Real-Time Sports Analytics
+-   Advanced Predictive Models
+-   Larger Sports-Specific Datasets
+-   Mobile Application
+-   Advanced Coach and Physiotherapist Analytics
+
+------------------------------------------------------------------------
+
+# ⭐ Project Status
+
+## ✅ Milestone 4 Completed
+
+The project now contains the implementation of **Milestones 1, 2, 3, and
+4**.
+
+### Core Features
+
+-   ✅ User Registration & Login
+-   ✅ JWT Authentication
+-   ✅ Forgot Password via Email OTP
+-   ✅ Google Authentication
+-   ✅ Athlete Profile Management
+-   ✅ Unique Username
+-   ✅ Athlete ID
+-   ✅ Username-Based Access Requests
+-   ✅ Access Approval/Rejection
+-   ✅ PostgreSQL Database Integration
+-   ✅ Video Upload & Processing
+-   ✅ Asynchronous AI Video Processing
+-   ✅ Pose Estimation
+-   ✅ Skeleton Tracking
+-   ✅ Biomechanics Analysis
+-   ✅ Movement Quality Assessment
+-   ✅ Injury Risk Prediction
+-   ✅ Risk Scoring
+-   ✅ Corrective Recommendations
+-   ✅ Processed Skeleton Video
+-   ✅ Downloadable PDF Reports
+-   ✅ Analysis History
+-   ✅ Interactive Dashboard
+-   ✅ Notifications
+-   ✅ Admin Management
+-   ✅ Account Revocation
+-   ✅ Gemini 3.6 Flash AI Chat
+-   ✅ Authorized AI Data Access
+-   ✅ Admin AI Chat Restriction
+-   ✅ Dockerized Backend
+-   ✅ Dockerized Frontend
+-   ✅ PostgreSQL Docker Container
+-   ✅ Docker Compose
+-   ✅ Container Health Checks
+
+------------------------------------------------------------------------
+
+# 👩‍💻 Developed By
+
+**Veera Naga Durga Garlanka**
 
 B.Tech -- Computer Science & Engineering (AI & ML)
 
@@ -1060,7 +920,9 @@ CMR College of Engineering & Technology
 
 Infosys Springboard Internship Program
 
-📄 License
+------------------------------------------------------------------------
 
-This project was developed as part of the Infosys Springboard
-Internship Program for educational and research purposes.
+# 📄 License
+
+This project was developed as part of the **Infosys Springboard
+Internship Program** for educational and research purposes.
