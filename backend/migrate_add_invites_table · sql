@@ -1,0 +1,27 @@
+-- ============================================================
+-- Creates the invites table backing the invite-LINK sharing flow
+-- (POST /athlete-profile/{athlete_id}/invite, GET/POST /invite/{token}).
+-- This is a brand new table, so there's no existing-row backfill needed -
+-- unlike migrate_add_username.sql, this can just create it outright.
+-- Safe to re-run: IF NOT EXISTS guards on both the table and the indexes.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS invites (
+    id SERIAL PRIMARY KEY,
+    athlete_pk_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    invited_by_user_id INTEGER NOT NULL REFERENCES users(id),
+    token VARCHAR NOT NULL UNIQUE,
+    status VARCHAR NOT NULL DEFAULT 'pending',
+    accepted_by_user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    accepted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_invites_athlete_pk_id ON invites (athlete_pk_id);
+CREATE INDEX IF NOT EXISTS ix_invites_invited_by_user_id ON invites (invited_by_user_id);
+CREATE INDEX IF NOT EXISTS ix_invites_token ON invites (token);
+
+-- Verify
+SELECT id, athlete_pk_id, invited_by_user_id, status, accepted_by_user_id, created_at
+FROM invites
+ORDER BY id;

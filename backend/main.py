@@ -1,20 +1,28 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
- 
+
 from database.database import engine, SessionLocal
 from database import models
-from routers import auth, athlete, upload, analysis, report, access_request
- 
+from routers import auth, athlete, upload, analysis, report, access_request, admin, notifications, chat
+
 app = FastAPI(title="Sports Injury Risk Detection API")
- 
+
+cors_origins_text = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000",
+)
+allowed_origins = [origin.strip() for origin in cors_origins_text.split(",") if origin.strip()]
+
 # Creates any tables that don't exist yet (e.g. the new "users" table).
 # NOTE: create_all does NOT add columns to tables that already exist - see
 # the migration note in the summary for the new AnalysisResult.biomechanics
 # column if your analysis_results table was created before this change.
 models.Base.metadata.create_all(bind=engine)
- 
- 
+
+
 @app.on_event("startup")
 def reconcile_orphaned_processing_rows():
     """
@@ -23,7 +31,7 @@ def reconcile_orphaned_processing_rows():
     just got a dev --reload trigger while a video was mid-processing, that
     row is stuck at status="processing" forever with nothing ever marking
     it done or failed, since the task that would have updated it is gone.
- 
+
     On every startup, mark any such orphaned rows as "failed" with a clear
     message, so the frontend shows something actionable instead of an
     infinite spinner, and the user knows to just re-upload.
@@ -45,31 +53,33 @@ def reconcile_orphaned_processing_rows():
             db.commit()
     finally:
         db.close()
- 
- 
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
- 
+
 app.include_router(auth.router)
 app.include_router(athlete.router)
 app.include_router(upload.router)
 app.include_router(analysis.router)
 app.include_router(report.router)
 app.include_router(access_request.router)
- 
- 
+app.include_router(admin.router)
+app.include_router(notifications.router)
+app.include_router(chat.router)
+
+
 @app.get("/")
 async def root():
     return {"message": "Sports Injury Risk Detection API"}
- 
- 
+
+
 if __name__ == "__main__":
     import uvicorn
- 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
- 
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

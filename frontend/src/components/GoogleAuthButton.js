@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
- 
+
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
- 
+
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) {
@@ -25,7 +25,7 @@ function loadGoogleScript() {
     document.body.appendChild(script);
   });
 }
- 
+
 /**
  * Self-contained Google Sign-In button. Dynamically loads Google's script
  * (no index.html changes needed). Requires REACT_APP_GOOGLE_CLIENT_ID to be
@@ -38,23 +38,28 @@ function GoogleAuthButton() {
   const buttonRef = useRef(null);
   const [pendingSignup, setPendingSignup] = useState(null); // {credential, email, name}
   const [selectedRole, setSelectedRole] = useState("Athlete");
- 
+  // NEW. Google doesn't provide a username - collected here, alongside
+  // role, as part of the same "finish creating your account" step.
+  const [chosenUsername, setChosenUsername] = useState("");
+  const [signupError, setSignupError] = useState(null);
+  const [completingSignup, setCompletingSignup] = useState(false);
+
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
       console.warn("REACT_APP_GOOGLE_CLIENT_ID is not set - Google Sign-In button will not render.");
       return;
     }
- 
+
     let cancelled = false;
- 
+
     loadGoogleScript().then(() => {
       if (cancelled || !window.google?.accounts?.id) return;
- 
+
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
       });
- 
+
       if (buttonRef.current) {
         window.google.accounts.id.renderButton(buttonRef.current, {
           theme: "outline",
@@ -63,21 +68,22 @@ function GoogleAuthButton() {
         });
       }
     });
- 
+
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
- 
+
   const handleCredentialResponse = async (response) => {
     const credential = response.credential;
     try {
       const res = await api.post("/auth/google", { credential });
- 
+
       if (res.data.is_new_user) {
-        // Google doesn't know which role this person should have - hold
-        // onto the credential and ask, then finish signup separately.
+        // Google doesn't know which role (or username) this person
+        // should have - hold onto the credential and ask, then finish
+        // signup separately.
         setPendingSignup({ credential, email: res.data.email, name: res.data.name });
       } else {
         localStorage.setItem("access_token", res.data.access_token);
@@ -88,35 +94,57 @@ function GoogleAuthButton() {
       alert(error.response?.data?.detail || "Google Sign-In failed.");
     }
   };
- 
+
   const completeSignup = async () => {
+    const trimmedUsername = chosenUsername.trim();
+    if (!trimmedUsername) {
+      setSignupError("Please choose a username.");
+      return;
+    }
+
+    setCompletingSignup(true);
+    setSignupError(null);
     try {
       const res = await api.post("/auth/google/complete-signup", {
         credential: pendingSignup.credential,
         role: selectedRole,
+        username: trimmedUsername,
       });
       localStorage.setItem("access_token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       alert(res.data.message);
       navigate("/dashboard");
     } catch (error) {
-      alert(error.response?.data?.detail || "Failed to complete sign-up.");
+      setSignupError(error.response?.data?.detail || "Failed to complete sign-up.");
+    } finally {
+      setCompletingSignup(false);
     }
   };
- 
+
   if (!GOOGLE_CLIENT_ID) return null;
- 
+
   return (
     <div style={{ marginTop: "16px" }}>
       <div style={{ textAlign: "center", color: "#94A3B8", fontSize: "13px", margin: "12px 0" }}>OR</div>
       <div ref={buttonRef}></div>
- 
+
       {pendingSignup && (
         <div className="modal-overlay" onClick={() => setPendingSignup(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
             <button className="modal-close" onClick={() => setPendingSignup(null)}>✕</button>
             <h3>Almost done, {pendingSignup.name}</h3>
-            <p style={{ color: "#64748B" }}>Choose your role to finish creating your account:</p>
+            <p style={{ color: "#64748B" }}>Choose a username and your role to finish creating your account:</p>
+
+            <div className="form-group">
+              <label>Username</label>
+              <input
+                className="form-control"
+                placeholder="3-20 characters, letters/numbers/underscore"
+                value={chosenUsername}
+                onChange={(e) => setChosenUsername(e.target.value)}
+              />
+            </div>
+
             <select
               className="form-control"
               value={selectedRole}
@@ -126,10 +154,19 @@ function GoogleAuthButton() {
               <option>Coach</option>
               <option>Physiotherapist</option>
               <option>Sports Scientist</option>
-              <option>Administrator</option>
             </select>
-            <button className="btn" style={{ width: "100%", marginTop: "12px" }} onClick={completeSignup}>
-              Create Account
+
+            {signupError && (
+              <p style={{ color: "#DC2626", fontSize: "13px", marginTop: "10px" }}>{signupError}</p>
+            )}
+
+            <button
+              className="btn"
+              style={{ width: "100%", marginTop: "12px" }}
+              onClick={completeSignup}
+              disabled={completingSignup}
+            >
+              {completingSignup ? "Creating..." : "Create Account"}
             </button>
           </div>
         </div>
@@ -137,6 +174,5 @@ function GoogleAuthButton() {
     </div>
   );
 }
- 
+
 export default GoogleAuthButton;
- 

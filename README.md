@@ -687,7 +687,43 @@ secrets to GitHub.
 
 ------------------------------------------------------------------------
 
-# 📊 Current Progress
+# � Docker Setup
+
+## Prerequisites
+
+1. Install Docker Desktop.
+2. Clone the repository.
+3. Configure your local backend environment file at [backend/.env](backend/.env) using the template in [backend/.env.example](backend/.env.example).
+
+## Run the app with Docker
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API docs: http://localhost:8000/docs
+
+## Stop the app
+
+```bash
+docker compose down
+```
+
+To stop and remove the PostgreSQL data volume as well (only when intentionally resetting the database):
+
+```bash
+docker compose down -v
+```
+
+> Warning: `docker compose down -v` deletes the PostgreSQL Docker volume and all stored database data.
+
+---
+
+# �📊 Current Progress
 
   Module                           Status
   -------------------------------- --------------

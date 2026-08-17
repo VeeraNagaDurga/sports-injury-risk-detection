@@ -114,6 +114,43 @@ function AthleteProfile() {
         <div className="form-card profile-card">
  
           <h2>{isAthlete ? "My Profile" : "Athlete Profile"}</h2>
+
+          {/* NEW. Account info (name + username) - read-only, comes from
+              the logged-in session, not the athlete-details form below.
+              Username can be missing on older accounts that predate the
+              feature, so it's only shown when present. */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "24px",
+              paddingBottom: "20px",
+              borderBottom: "1px solid #E2E8F0",
+            }}
+          >
+            <span style={{ fontSize: "18px", fontWeight: 700, color: "#0F172A" }}>
+              {currentUser.name}
+            </span>
+            {currentUser.username && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 12px",
+                  borderRadius: "999px",
+                  backgroundColor: "#EFF6FF",
+                  border: "1px solid #BFDBFE",
+                  color: "#2563EB",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                }}
+              >
+                @{currentUser.username}
+              </span>
+            )}
+          </div>
  
           <form onSubmit={saveProfile} className="profile-grid">
  
@@ -168,4 +205,3 @@ function AthleteProfile() {
 }
  
 export default AthleteProfile;
- 

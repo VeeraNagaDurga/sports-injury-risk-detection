@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "../styles/dashboard.css";
 import StatCard from "../components/StatCard";
- 
+
 import {
   FaUsers,
   FaVideo,
@@ -12,25 +12,42 @@ import {
   FaTrash,
   FaExternalLinkAlt
 } from "react-icons/fa";
- 
+
 const STATUS_COLORS = {
   processing: "#F59E0B",
   completed: "#22C55E",
   failed: "#EF4444",
 };
- 
+
 function statusLabel(status) {
   if (status === "processing") return "Processing...";
   if (status === "failed") return "Failed";
   return "Completed";
 }
- 
+
 const TREND_COLORS = {
   Improving: "#22C55E",
   Declining: "#EF4444",
   Stable: "#64748B",
 };
- 
+
+// NEW. FastAPI's error responses aren't always a plain string in
+// `detail` - validation errors (422s) send an ARRAY of objects like
+// [{ loc: ["body", "username"], msg: "field required", type: "..." }].
+// alert()-ing that directly just shows "[object Object]", which is what
+// was happening here - this makes every error actually readable instead.
+function getErrorMessage(error, fallback) {
+  const detail = error.response?.data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => (typeof d === "string" ? d : d.msg || JSON.stringify(d)))
+      .join("\n");
+  }
+  return typeof detail === "object" ? JSON.stringify(detail) : String(detail);
+}
+
 /**
  * Plain SVG line chart, no charting library needed - plots each session's
  * overall risk score (0-100) in chronological order.
@@ -42,16 +59,16 @@ function RiskTrendChart({ sessions }) {
   const usableWidth = width - padding * 2;
   const usableHeight = height - padding * 2;
   const maxScore = 100;
- 
+
   const pointFor = (i, score) => {
     const x = padding + (sessions.length > 1 ? (i * usableWidth) / (sessions.length - 1) : usableWidth / 2);
     const y = padding + usableHeight - ((score ?? 0) / maxScore) * usableHeight;
     return [x, y];
   };
- 
+
   const points = sessions.map((s, i) => pointFor(i, s.overall_score));
   const polyline = points.map(([x, y]) => `${x},${y}`).join(" ");
- 
+
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto" }}>
       {/* gridlines at 0/25/50/75/100 */}
@@ -64,22 +81,22 @@ function RiskTrendChart({ sessions }) {
           </g>
         );
       })}
- 
+
       <polyline points={polyline} fill="none" stroke="#2563EB" strokeWidth="2.5" />
- 
+
       {points.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r="5" fill="#2563EB" stroke="#fff" strokeWidth="1.5" />
       ))}
     </svg>
   );
 }
- 
+
 function Dashboard() {
   const navigate = useNavigate();
- 
+
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isAthlete = currentUser.role === "Athlete";
- 
+
   const [profiles, setProfiles] = useState([]);
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,18 +104,22 @@ function Dashboard() {
   const [trendsData, setTrendsData] = useState(null);
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [trendsError, setTrendsError] = useState(null);
- 
+
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
-  const [requestAthleteId, setRequestAthleteId] = useState("");
+  // NEW. Request Access now searches by unique username instead of
+  // Athlete ID (see the form below) - renamed to match what it actually
+  // holds. Athlete ID itself is untouched everywhere else on this page
+  // (profiles table, trends, analyses) - only this one input changed.
+  const [requestUsername, setRequestUsername] = useState("");
   const [requestingAccess, setRequestingAccess] = useState(false);
- 
+
   useEffect(() => {
     fetchProfiles();
     fetchAnalyses();
     fetchIncomingRequests();
     fetchOutgoingRequests();
- 
+
     // Poll the analyses list periodically so any "Processing..." rows
     // flip to "Completed" on their own without needing a manual refresh -
     // this is what lets you check on an in-progress upload from here
@@ -110,7 +131,7 @@ function Dashboard() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
- 
+
   const fetchIncomingRequests = async () => {
     try {
       const res = await api.get("/access-requests/incoming");
@@ -119,7 +140,7 @@ function Dashboard() {
       console.error("Error fetching incoming access requests:", error);
     }
   };
- 
+
   const fetchOutgoingRequests = async () => {
     try {
       const res = await api.get("/access-requests/outgoing");
@@ -128,43 +149,48 @@ function Dashboard() {
       console.error("Error fetching outgoing access requests:", error);
     }
   };
- 
+
   const requestAccess = async (e) => {
     e.preventDefault();
-    if (!requestAthleteId.trim()) return;
- 
+    if (!requestUsername.trim()) return;
+
     setRequestingAccess(true);
     try {
-      const res = await api.post("/access-requests", { athlete_id: requestAthleteId.trim() });
+      // NEW. Sends { username } instead of { athlete_id } - the backend
+      // looks the target user up by their unique username now, per the
+      // updated Request Access flow. The request record itself still
+      // tracks the athlete by Athlete ID internally; this is only how
+      // it's found at request-creation time.
+      const res = await api.post("/access-requests", { username: requestUsername.trim() });
       alert(res.data.message);
-      setRequestAthleteId("");
+      setRequestUsername("");
       fetchOutgoingRequests();
     } catch (error) {
-      alert(error.response?.data?.detail || "Failed to send access request.");
+      alert(getErrorMessage(error, "Failed to send access request."));
     } finally {
       setRequestingAccess(false);
     }
   };
- 
+
   const approveRequest = async (requestId, canUpload) => {
     try {
       await api.post(`/access-requests/${requestId}/approve`, { can_upload: canUpload });
       fetchIncomingRequests();
       fetchProfiles();
     } catch (error) {
-      alert(error.response?.data?.detail || "Failed to approve request.");
+      alert(getErrorMessage(error, "Failed to approve request."));
     }
   };
- 
+
   const denyRequest = async (requestId) => {
     try {
       await api.post(`/access-requests/${requestId}/deny`);
       fetchIncomingRequests();
     } catch (error) {
-      alert(error.response?.data?.detail || "Failed to deny request.");
+      alert(getErrorMessage(error, "Failed to deny request."));
     }
   };
- 
+
   const revokeRequest = async (requestId) => {
     if (!window.confirm("Revoke this access? They will immediately lose access to all past and future data for this athlete.")) {
       return;
@@ -174,10 +200,10 @@ function Dashboard() {
       fetchIncomingRequests();
       fetchProfiles();
     } catch (error) {
-      alert(error.response?.data?.detail || "Failed to revoke access.");
+      alert(getErrorMessage(error, "Failed to revoke access."));
     }
   };
- 
+
   const fetchProfiles = async () => {
     try {
       const res = await api.get("/athlete-profiles");
@@ -188,7 +214,7 @@ function Dashboard() {
       setLoading(false);
     }
   };
- 
+
   const fetchAnalyses = async () => {
     try {
       const res = await api.get("/analyses");
@@ -197,7 +223,7 @@ function Dashboard() {
       console.error("Error fetching analyses:", error);
     }
   };
- 
+
   const deleteProfile = async (athlete_id) => {
     if (window.confirm(`Delete profile for ${athlete_id}?`)) {
       try {
@@ -206,12 +232,12 @@ function Dashboard() {
         fetchAnalyses(); // that athlete's analyses are gone too now (cascade delete)
       } catch (error) {
         console.error("Error deleting profile:", error);
-        const errorMessage = error.response?.data?.detail || "Failed to delete profile from database";
+        const errorMessage = getErrorMessage(error, "Failed to delete profile from database");
         alert(errorMessage);
       }
     }
   };
- 
+
   const deleteAnalysis = async (video_id, filename) => {
     if (!video_id) {
       alert("Can't delete this entry - missing video reference.");
@@ -225,11 +251,11 @@ function Dashboard() {
       fetchAnalyses();
     } catch (error) {
       console.error("Error deleting video/analysis:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to delete this video.";
+      const errorMessage = getErrorMessage(error, "Failed to delete this video.");
       alert(errorMessage);
     }
   };
- 
+
   const fetchTrends = async (athlete_id) => {
     setTrendsLoading(true);
     setTrendsError(null);
@@ -238,85 +264,110 @@ function Dashboard() {
       const res = await api.get(`/athlete-profile/${encodeURIComponent(athlete_id)}/trends`);
       setTrendsData(res.data);
     } catch (error) {
-      setTrendsError(error.response?.data?.detail || "Failed to load trend data.");
+      setTrendsError(getErrorMessage(error, "Failed to load trend data."));
     } finally {
       setTrendsLoading(false);
     }
   };
- 
+
   const processingCount = analyses.filter(a => a.status === "processing").length;
   const highRiskCount = analyses.filter(a => {
     const level = a.risk_score_summary?.risk_level;
     return level === "High" || level === "Critical";
   }).length;
- 
+
   return (
     <div className="page">
       <div className="container">
- 
+
         <h1 className="dashboard-title">
           Dashboard
         </h1>
- 
+
         <p className="dashboard-subtitle">
           AI Sports Injury Detection Overview
         </p>
- 
+
+        {/* NEW. Username banner - shows the signed-in user's own unique
+            username (falls back gracefully if it's ever missing from the
+            stored user object, e.g. an older session predating this
+            feature). Purely informational, doesn't affect any request. */}
+        {currentUser.username && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "4px",
+              marginBottom: "20px",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              backgroundColor: "#EFF6FF",
+              border: "1px solid #BFDBFE",
+            }}
+          >
+            <span style={{ color: "#64748B", fontSize: "13px" }}>Signed in as</span>
+            <span style={{ color: "#2563EB", fontSize: "14px", fontWeight: 700 }}>
+              @{currentUser.username}
+            </span>
+          </div>
+        )}
+
         <div className="dashboard-grid">
- 
+
           <StatCard
             title="Saved Athletes"
             value={profiles.length}
             icon={<FaUsers />}
             color="#2563EB"
           />
- 
+
           <StatCard
             title="Total Videos"
             value={analyses.length}
             icon={<FaVideo />}
             color="#22C55E"
           />
- 
+
           <StatCard
             title="High Risk Cases"
             value={highRiskCount}
             icon={<FaHeartbeat />}
             color="#EF4444"
           />
- 
+
           <StatCard
             title="Currently Processing"
             value={processingCount}
             icon={<FaHourglassHalf />}
             color="#F59E0B"
           />
- 
+
         </div>
- 
+
         {/* ---------------- Request Access to Another Athlete ---------------- */}
         {!isAthlete && (
           <div className="analytics-card" style={{ marginBottom: "24px" }}>
             <h2>Request Access to an Athlete</h2>
             <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
-              Enter an athlete's ID to request read-only access to their analysis history.
+              Enter the athlete's username to request read-only access to their analysis history.
               They'll need to approve it before you can see anything.
             </p>
             <form onSubmit={requestAccess} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               <input
                 className="form-control"
                 style={{ maxWidth: "240px" }}
-                placeholder="Athlete ID (e.g. ATH001)"
-                value={requestAthleteId}
-                onChange={(e) => setRequestAthleteId(e.target.value)}
+                placeholder="Athlete Username (e.g. veera123)"
+                value={requestUsername}
+                onChange={(e) => setRequestUsername(e.target.value)}
               />
-              <button className="btn" type="submit" disabled={requestingAccess || !requestAthleteId.trim()}>
+              <button className="btn" type="submit" disabled={requestingAccess || !requestUsername.trim()}>
                 {requestingAccess ? "Sending..." : "Send Request"}
               </button>
             </form>
           </div>
         )}
- 
+
         {/* ---------------- My Sent Requests (outgoing) ---------------- */}
         {outgoingRequests.length > 0 && (
           <div className="analytics-card" style={{ marginBottom: "24px" }}>
@@ -347,7 +398,7 @@ function Dashboard() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- Incoming Access Requests (people wanting access to athletes I own) ---------------- */}
         {incomingRequests.length > 0 && (
           <div className="analytics-card" style={{ marginBottom: "24px" }}>
@@ -411,7 +462,7 @@ function Dashboard() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- My Analyses (in-progress + completed) ---------------- */}
         <div className="analytics-card" style={{ marginBottom: "24px" }}>
           <h2>My Analyses</h2>
@@ -419,7 +470,7 @@ function Dashboard() {
             Every video you've uploaded, including ones still processing in the
             background - click into any of them anytime, from anywhere.
           </p>
- 
+
           {analyses.length === 0 ? (
             <p>No videos uploaded yet. Go to Upload to analyze your first video.</p>
           ) : (
@@ -468,7 +519,7 @@ function Dashboard() {
             </div>
           )}
         </div>
- 
+
         <div className="analytics-card">
           <h2>Saved Athlete Profiles</h2>
           
@@ -539,7 +590,7 @@ function Dashboard() {
             </div>
           )}
         </div>
- 
+
         {selectedProfile && (
           <div className="modal-overlay" onClick={() => setSelectedProfile(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -565,7 +616,7 @@ function Dashboard() {
             </div>
           </div>
         )}
- 
+
         {(trendsLoading || trendsData || trendsError) && (
           <div
             className="modal-overlay"
@@ -579,15 +630,15 @@ function Dashboard() {
                 ✕
               </button>
               <h2>Athlete Trend {trendsData ? `- ${trendsData.athlete_id}` : ""}</h2>
- 
+
               {trendsLoading && <p>Loading trend data...</p>}
- 
+
               {trendsError && <p style={{ color: "#DC2626" }}>{trendsError}</p>}
- 
+
               {trendsData && trendsData.trend.status === "insufficient_data" && (
                 <p style={{ color: "#64748B" }}>{trendsData.trend.message}</p>
               )}
- 
+
               {trendsData && trendsData.trend.status === "ok" && (
                 <>
                   <div
@@ -613,9 +664,9 @@ function Dashboard() {
                       {" "}({trendsData.trend.change > 0 ? "+" : ""}{trendsData.trend.change} over {trendsData.session_count} sessions)
                     </div>
                   </div>
- 
+
                   <RiskTrendChart sessions={trendsData.sessions} />
- 
+
                   <table className="profiles-table" style={{ marginTop: "16px" }}>
                     <thead>
                       <tr>
@@ -643,10 +694,10 @@ function Dashboard() {
             </div>
           </div>
         )}
- 
+
       </div>
     </div>
   );
 }
- 
+
 export default Dashboard;

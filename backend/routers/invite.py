@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -7,7 +9,7 @@ from services.auth_service import get_current_user
 
 router = APIRouter(tags=["Invites"])
 
-FRONTEND_BASE_URL = "http://localhost:3000"
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 
 
 @router.post("/athlete-profile/{athlete_id}/invite")

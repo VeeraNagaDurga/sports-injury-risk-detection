@@ -1,13 +1,13 @@
 import "./index.css";
 import "./styles/global.css";
 import "./App.css";
- 
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
- 
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
- 
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -17,28 +17,23 @@ import Dashboard from "./pages/Dashboard";
 import AthleteProfile from "./pages/AthleteProfile";
 import UploadVideo from "./pages/UploadVideo";
 import Results from "./pages/Results";
- 
+import AdminDashboard from "./pages/AdminDashboard";
+import ChatWidget from "./components/ChatWidget";
+
 function App() {
   return (
     <BrowserRouter>
       <div className="app">
- 
         <Navbar />
- 
+
         <main>
- 
           <Routes>
- 
             <Route path="/" element={<Home />} />
- 
             <Route path="/login" element={<Login />} />
- 
             <Route path="/register" element={<Register />} />
- 
             <Route path="/forgot-password" element={<ForgotPassword />} />
- 
             <Route path="/reset-password" element={<ResetPassword />} />
- 
+
             <Route
               path="/dashboard"
               element={
@@ -47,7 +42,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/athlete-profile"
               element={
@@ -56,7 +51,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/upload-video"
               element={
@@ -65,7 +60,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/results"
               element={
@@ -74,17 +69,24 @@ function App() {
                 </ProtectedRoute>
               }
             />
- 
+
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
- 
         </main>
- 
+
         <Footer />
- 
+
+        <ChatWidget />
       </div>
     </BrowserRouter>
   );
 }
- 
+
 export default App;
- 
