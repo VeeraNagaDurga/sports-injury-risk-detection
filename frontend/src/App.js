@@ -18,6 +18,7 @@ import AthleteProfile from "./pages/AthleteProfile";
 import UploadVideo from "./pages/UploadVideo";
 import Results from "./pages/Results";
 import AdminDashboard from "./pages/AdminDashboard";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   return (
@@ -81,6 +82,8 @@ function App() {
         </main>
 
         <Footer />
+
+        <ChatWidget />
       </div>
     </BrowserRouter>
   );
