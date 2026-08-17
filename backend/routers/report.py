@@ -57,6 +57,14 @@ async def download_processed_video(filename: str):
         path=file_path,
         media_type="video/mp4",
         filename=decoded_filename,
+        # Without this, FileResponse defaults to
+        # Content-Disposition: attachment, which tells the browser to
+        # download the file rather than play it - some browsers then
+        # refuse to render it in the <video> tag at all (looks like a
+        # broken/unplayable video, even though the file itself is fine).
+        # "inline" lets the <video> tag play it while the Download link
+        # (a plain <a href> tag, not this response) still works as before.
+        content_disposition_type="inline",
     )
  
  
@@ -108,4 +116,3 @@ def delete_report_record(
     crud.delete_report(db, report_id)
  
     return {"message": f"Report {report_id} was deleted successfully"}
- 

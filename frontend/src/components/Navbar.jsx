@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaRunning, FaSignOutAlt } from "react-icons/fa";
+import NotificationBell from "./NotificationBell";
 
 function Navbar() {
   const location = useLocation();
@@ -22,10 +23,6 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    // FIX: was removeItem("token") - the key Login.js actually stores under
-    // is "access_token". Removing the wrong key left the real token sitting
-    // in localStorage after "logout", so api.js would keep attaching it to
-    // requests as if the user were still signed in.
     localStorage.removeItem("access_token");
     setUser(null);
     alert("Logged out successfully");
@@ -52,32 +49,47 @@ function Navbar() {
 
           {user && (
             <>
-              <Link
-                to="/dashboard"
-                style={{
-                  color: location.pathname === "/dashboard" ? "#2563EB" : ""
-                }}
-              >
-                Dashboard
-              </Link>
+              {user.role !== "Administrator" && (
+                <>
+                  <Link
+                    to="/dashboard"
+                    style={{
+                      color: location.pathname === "/dashboard" ? "#2563EB" : ""
+                    }}
+                  >
+                    Dashboard
+                  </Link>
 
-              <Link
-                to="/athlete-profile"
-                style={{
-                  color: location.pathname === "/athlete-profile" ? "#2563EB" : ""
-                }}
-              >
-                Profile
-              </Link>
+                  <Link
+                    to="/athlete-profile"
+                    style={{
+                      color: location.pathname === "/athlete-profile" ? "#2563EB" : ""
+                    }}
+                  >
+                    Profile
+                  </Link>
 
-              <Link
-                to="/upload-video"
-                style={{
-                  color: location.pathname === "/upload-video" ? "#2563EB" : ""
-                }}
-              >
-                Upload
-              </Link>
+                  <Link
+                    to="/upload-video"
+                    style={{
+                      color: location.pathname === "/upload-video" ? "#2563EB" : ""
+                    }}
+                  >
+                    Upload
+                  </Link>
+                </>
+              )}
+
+              {user.role === "Administrator" && (
+                <Link
+                  to="/admin"
+                  style={{
+                    color: location.pathname === "/admin" ? "#2563EB" : ""
+                  }}
+                >
+                  Admin
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -85,6 +97,7 @@ function Navbar() {
         <div className="nav-actions">
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <NotificationBell />
               <span style={{ fontSize: "14px", fontWeight: "600", color: "#475569" }}>
                 {user.name} ({user.role})
               </span>

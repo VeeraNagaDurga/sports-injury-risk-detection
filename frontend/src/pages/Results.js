@@ -2,26 +2,26 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "../styles/upload.css";
- 
+
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
- 
+
 const RISK_COLORS = {
   Low: "#22C55E",
   Moderate: "#F59E0B",
   High: "#EF4444",
   Critical: "#991B1B",
 };
- 
+
 function riskColor(level) {
   return RISK_COLORS[level] || "#334155";
 }
- 
+
 function displayInjuryName(name) {
   return name === "LowerBack" ? "Lower Back" : name;
 }
- 
+
 const PROCESSING_STAGES = [
   "Uploading and preparing video...",
   "Running pose estimation (MediaPipe)...",
@@ -31,13 +31,13 @@ const PROCESSING_STAGES = [
   "Predicting injury risk...",
   "Compiling PDF biomechanics report...",
 ];
- 
+
 function formatElapsed(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
- 
+
 const sectionStyle = { margin: "32px 0" };
 const cardStyle = {
   background: "#F8FAFC",
@@ -59,43 +59,91 @@ const tdStyle = {
   fontSize: "14px",
   verticalAlign: "top",
 };
- 
+
 function Results() {
   const query = useQuery();
   const navigate = useNavigate();
   const analysisId = query.get("analysis_id");
- 
+
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [videoError, setVideoError] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
- 
+
+  // NEW. Excel export - unlike the PDF report link (a plain <a href>
+  // hitting an unauthenticated static file route), the Excel endpoint
+  // requires the logged-in user's token, so it can't be a bare link.
+  // Fetch it as a blob via the authenticated `api` client, then trigger
+  // the browser's normal download behavior manually.
+  const [excelDownloading, setExcelDownloading] = useState(false);
+  const [excelError, setExcelError] = useState(null);
+
+  const handleExcelExport = async () => {
+    setExcelDownloading(true);
+    setExcelError(null);
+    try {
+      const res = await api.get(`/analysis/${encodeURIComponent(analysisId)}/export/excel`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `analysis_${analysisId}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExcelError(
+        err.response?.data?.detail || "Failed to export Excel report. Please try again."
+      );
+    } finally {
+      setExcelDownloading(false);
+    }
+  };
+
   useEffect(() => {
     if (!analysisId) {
       setError("No analysis_id provided in URL.");
       setLoading(false);
       return;
     }
- 
+
     let cancelled = false;
     let pollTimer = null;
- 
+    let videoUrlRetries = 0;
+    const MAX_VIDEO_URL_RETRIES = 3;
+
     const fetchAnalysis = async (isFirstLoad) => {
       try {
         if (isFirstLoad) setLoading(true);
         const res = await api.get(`/analysis/${encodeURIComponent(analysisId)}`);
         if (cancelled) return;
- 
+
         setAnalysis(res.data);
         setError(null);
- 
+
         // Still being processed on the server - check again in a few
         // seconds. This is what lets the user navigate away and come back:
         // this page just keeps asking "is it done yet?" independently of
         // whatever else the user does in the meantime.
         if (res.data.status === "processing") {
           pollTimer = setTimeout(() => fetchAnalysis(false), 3000);
+        } else if (
+          res.data.status === "completed" &&
+          !res.data.processed_video_download &&
+          videoUrlRetries < MAX_VIDEO_URL_RETRIES
+        ) {
+          // Safety net for a backend race: status can in principle flip to
+          // "completed" a moment before the report row (which carries the
+          // video URL) is fully committed. A few retries a couple seconds
+          // apart cover that gap without polling forever - if it's still
+          // missing after MAX_VIDEO_URL_RETRIES, it's a genuine data
+          // problem, not a race, and the video-error UI below is the
+          // correct thing to show.
+          videoUrlRetries += 1;
+          pollTimer = setTimeout(() => fetchAnalysis(false), 2000);
         }
       } catch (err) {
         if (cancelled) return;
@@ -104,25 +152,30 @@ function Results() {
         if (!cancelled && isFirstLoad) setLoading(false);
       }
     };
- 
+
     fetchAnalysis(true);
- 
+
     return () => {
       cancelled = true;
       if (pollTimer) clearTimeout(pollTimer);
     };
   }, [analysisId]);
- 
+
   // Ticks once per second while processing, purely to show elapsed time and
   // cycle through staged progress text - genuinely reassuring on a
   // long-running task, and honest (it's not claiming false precision about
   // what stage the pipeline is actually in server-side).
+  //
+  // Deliberately reads only analysis?.status (matching the dependency
+  // array below), not the full analysis object - adding the whole object
+  // to deps would restart this timer on every 3s poll response (even when
+  // status hasn't changed), which would break the elapsed-time counter.
   useEffect(() => {
-    if (!analysis || analysis.status !== "processing") return;
+    if (analysis?.status !== "processing") return;
     const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, [analysis?.status]);
- 
+
   if (loading) {
     return (
       <div className="page">
@@ -132,7 +185,7 @@ function Results() {
       </div>
     );
   }
- 
+
   if (error) {
     return (
       <div className="page">
@@ -143,11 +196,11 @@ function Results() {
       </div>
     );
   }
- 
+
   if (analysis && analysis.status === "processing") {
     const stageIndex = Math.min(Math.floor(elapsedSeconds / 4), PROCESSING_STAGES.length - 1);
     const progressPct = Math.min(95, Math.round((elapsedSeconds / 60) * 100));
- 
+
     return (
       <div className="page">
         <style>{`
@@ -165,12 +218,12 @@ function Results() {
               animation: "results-spin 0.9s linear infinite",
             }}
           />
- 
+
           <h2 style={{ marginBottom: "6px" }}>Analyzing Your Video</h2>
           <p style={{ color: "#334155", fontWeight: 600, minHeight: "24px" }}>
             {PROCESSING_STAGES[stageIndex]}
           </p>
- 
+
           <div
             style={{
               width: "100%",
@@ -194,7 +247,7 @@ function Results() {
           <p style={{ color: "#94A3B8", fontSize: "13px" }}>
             Elapsed: {formatElapsed(elapsedSeconds)} — longer videos can take a minute or more.
           </p>
- 
+
           <div
             style={{
               background: "#F8FAFC",
@@ -211,7 +264,7 @@ function Results() {
             this browser tab. You're free to leave this page — nothing will be lost or
             interrupted, and you can check on it anytime from your Dashboard.
           </div>
- 
+
           <button
             className="btn"
             style={{ marginTop: "20px" }}
@@ -223,7 +276,7 @@ function Results() {
       </div>
     );
   }
- 
+
   if (analysis && analysis.status === "failed") {
     return (
       <div className="page">
@@ -236,7 +289,7 @@ function Results() {
       </div>
     );
   }
- 
+
   const {
     biomechanics,
     movement_quality,
@@ -249,10 +302,10 @@ function Results() {
     filename,
     athlete_name,
   } = analysis;
- 
+
   const rom = biomechanics?.range_of_motion || {};
   const breakdown = risk_score_summary?.breakdown || {};
- 
+
   return (
     <div className="page">
       <div className="container" style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto" }}>
@@ -260,7 +313,7 @@ function Results() {
         <p style={{ color: "#64748B" }}>
           {athlete_name ? `Athlete: ${athlete_name}` : null} {filename ? `— ${filename}` : null}
         </p>
- 
+
         {/* ---------------- Processed Video ---------------- */}
         <div style={sectionStyle}>
           <h3>Processed Video</h3>
@@ -301,13 +354,25 @@ function Results() {
             </div>
           )}
         </div>
- 
+
         <div style={sectionStyle}>
-          <a href={report_download} target="_blank" rel="noreferrer" className="btn">
-            Download PDF Biomechanics Report
-          </a>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+            <a href={report_download} target="_blank" rel="noreferrer" className="btn">
+              Download PDF Biomechanics Report
+            </a>
+            <button
+              onClick={handleExcelExport}
+              disabled={excelDownloading}
+              className="btn-outline"
+            >
+              {excelDownloading ? "Exporting..." : "Export Excel Report"}
+            </button>
+          </div>
+          {excelError && (
+            <p style={{ color: "#DC2626", fontSize: "13px", marginTop: "8px" }}>{excelError}</p>
+          )}
         </div>
- 
+
         {/* ---------------- Injury Risk Evaluation ---------------- */}
         {risk_score_summary && (
           <div style={sectionStyle}>
@@ -334,7 +399,7 @@ function Results() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- Predicted Injury Profile ---------------- */}
         {injury_risks && (
           <div style={sectionStyle}>
@@ -371,7 +436,7 @@ function Results() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- Movement Anomaly Detection ---------------- */}
         {movement_anomalies && (
           <div style={sectionStyle}>
@@ -379,7 +444,7 @@ function Results() {
             <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
               Compares this session against this athlete's own recent history - not just fixed thresholds.
             </p>
- 
+
             {movement_anomalies.status === "insufficient_history" ? (
               <div style={{ ...cardStyle, color: "#64748B" }}>
                 {movement_anomalies.message}
@@ -400,7 +465,7 @@ function Results() {
                     {movement_anomalies.sessions_compared === 1 ? "" : "s"})
                   </span>
                 </div>
- 
+
                 {movement_anomalies.anomalies.length > 0 && (
                   <div style={tableWrapStyle}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -435,7 +500,7 @@ function Results() {
             )}
           </div>
         )}
- 
+
         {/* ---------------- Movement Quality ---------------- */}
         {movement_quality && (
           <div style={sectionStyle}>
@@ -455,7 +520,7 @@ function Results() {
             )}
           </div>
         )}
- 
+
         {/* ---------------- Biomechanical Joint Performance ---------------- */}
         {Object.keys(rom).length > 0 && (
           <div style={sectionStyle}>
@@ -488,7 +553,7 @@ function Results() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- Corrective Recommendations ---------------- */}
         {recommendations && recommendations.length > 0 && (
           <div style={sectionStyle}>
@@ -511,5 +576,5 @@ function Results() {
     </div>
   );
 }
- 
+
 export default Results;

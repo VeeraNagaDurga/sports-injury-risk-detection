@@ -1,7 +1,7 @@
 """
 Real email sending via SMTP (Gmail by default). Used for the Forgot
 Password flow.
- 
+
 REQUIRED SETUP (Gmail):
 1. Turn on 2-Step Verification on the Gmail account you want to send from:
    https://myaccount.google.com/security
@@ -18,15 +18,15 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
- 
+
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_APP_PASSWORD = os.getenv("SMTP_APP_PASSWORD")
- 
+
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
- 
- 
+
+
 def send_email(to_email: str, subject: str, body_html: str):
     if not SMTP_EMAIL or not SMTP_APP_PASSWORD:
         raise Exception(
@@ -34,19 +34,19 @@ def send_email(to_email: str, subject: str, body_html: str):
             ".env file to enable sending real emails (see the setup notes "
             "at the top of services/email_service.py)."
         )
- 
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = SMTP_EMAIL
     msg["To"] = to_email
     msg.attach(MIMEText(body_html, "html"))
- 
+
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
         server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
- 
- 
+
+
 def send_password_reset_email(to_email: str, token: str):
     reset_link = f"{FRONTEND_BASE_URL}/reset-password?token={token}"
     subject = "Reset your SportsAI password"
@@ -69,4 +69,32 @@ def send_password_reset_email(to_email: str, token: str):
     </div>
     """
     send_email(to_email, subject, body_html)
- 
+
+
+def send_notification_email(to_email: str, title: str, message: str, athlete_id: str = None):
+    """
+    NEW. Sends the same in-app Notification (see database/models.Notification
+    and services/notification_service.py) as an email, using the existing
+    send_email() plumbing/SMTP setup - no new configuration needed beyond
+    what Forgot Password already requires.
+    """
+    subject = f"SportsAI Alert: {title}"
+    athlete_line = f"<p style=\"color:#64748B;font-size:13px;\">Athlete: {athlete_id}</p>" if athlete_id else ""
+    body_html = f"""
+    <div style="font-family: sans-serif; max-width: 480px;">
+      <h2 style="color:#0F172A;">{title}</h2>
+      <p style="color:#334155;">{message}</p>
+      {athlete_line}
+      <p>
+        <a href="{FRONTEND_BASE_URL}/dashboard"
+           style="background:#2563EB;color:#fff;padding:10px 20px;
+                  border-radius:6px;text-decoration:none;display:inline-block;">
+          View in SportsAI
+        </a>
+      </p>
+      <p style="color:#94A3B8;font-size:12px;">
+        You're receiving this because you have an active SportsAI account.
+      </p>
+    </div>
+    """
+    send_email(to_email, subject, body_html)

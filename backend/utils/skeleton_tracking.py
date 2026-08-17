@@ -127,12 +127,14 @@ def process_video_with_skeleton(video_path, output_folder="processed_videos"):
  
     # --- Mandatory H.264 re-encode so the file actually plays in a browser ---
     try:
-        subprocess.run(
+        result = subprocess.run(
             [
                 ffmpeg_exe,
                 "-y",
                 "-i",
                 raw_path,
+                "-vf",
+                "scale=trunc(iw/2)*2:trunc(ih/2)*2",
                 "-c:v",
                 "libx264",
                 "-pix_fmt",
@@ -142,11 +144,15 @@ def process_video_with_skeleton(video_path, output_folder="processed_videos"):
                 final_path,
             ],
             check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as e:
-        raise Exception(f"ffmpeg conversion failed for {raw_path}: {e}")
+        stderr_tail = (e.stderr or b"").decode(errors="replace")[-2000:]
+        raise Exception(
+            f"ffmpeg conversion failed for {raw_path} "
+            f"(exit code {e.returncode}):\n{stderr_tail}"
+        )
     finally:
         # Clean up the raw mp4v intermediate file so it never lingers
         # alongside the final file (this is what used to cause duplicate /
