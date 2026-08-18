@@ -349,6 +349,52 @@ The system provides administrative controls for managing platform users.
 
 Admin functionality is protected using role-based authorization.
 
+## ✅ Admin Dashboard & User Management
+
+- Admin Analytics Dashboard
+- Platform-wide user statistics
+- Role-based user management
+- View registered users
+- User account status management
+- Revoke user accounts
+- Reactivate revoked users
+- Active and revoked user tracking
+
+## ✅ Contact Support
+
+- Contact Support feature for all non-admin users
+- Users can report technical issues or other problems to the Administrator
+- Users can provide a category, subject, and detailed message
+- Administrators can view submitted support messages
+- Administrators can reply to user issues
+- Administrators can resolve support requests
+- Users can view the status and replies to their submitted requests
+
+### Support Workflow
+
+User encounters a problem
+        ↓
+Contact Support
+        ↓
+Submit Issue to Administrator
+        ↓
+Administrator Reviews Issue
+        ↓
+Administrator Replies / Resolves
+        ↓
+User Receives Response
+
+## ✅ Enhanced Analysis Visualization
+
+- Improved analysis results interface
+- Interactive analysis charts
+- Bar charts for biomechanics and risk-related metrics
+- Visual representation of analysis results
+- Improved comparison of calculated movement metrics
+- Clearer presentation of injury-risk information
+- Interactive data visualization for easier interpretation
+
+
 ------------------------------------------------------------------------
 
 # ✅ Dockerization
@@ -478,15 +524,20 @@ Docker Compose manages:
 
 # 📁 Project Structure
 
-``` text
+```text
 sports-injury-risk-detection
 │
 ├── frontend
 │   ├── src
 │   │   ├── components
 │   │   │   └── ChatWidget.jsx
+│   │   ├── pages
+│   │   │   ├── Support.js
+│   │   │   └── ...
 │   │   ├── styles
-│   │   │   └── chat.css
+│   │   │   ├── chat.css
+│   │   │   ├── support.css
+│   │   │   └── ...
 │   │   ├── App.js
 │   │   └── ...
 │   ├── public
@@ -508,6 +559,7 @@ sports-injury-risk-detection
 │   │   ├── analysis.py
 │   │   ├── report.py
 │   │   ├── chat.py
+│   │   ├── support.py
 │   │   └── ...
 │   │
 │   ├── services
@@ -542,8 +594,6 @@ sports-injury-risk-detection
 ├── .dockerignore
 ├── docker-compose.yml
 └── README.md
-```
-
 ------------------------------------------------------------------------
 
 # 🚀 How to Run Locally
@@ -907,43 +957,48 @@ Milestone 4 extends the existing injury-risk platform with:
 The project now contains the implementation of **Milestones 1, 2, 3, and
 4**.
 
-### Core Features
+### Implemented Features
 
--   ✅ User Registration & Login
--   ✅ JWT Authentication
--   ✅ Forgot Password via Email OTP
--   ✅ Google Authentication
--   ✅ Athlete Profile Management
--   ✅ Unique Username
--   ✅ Athlete ID
--   ✅ Username-Based Access Requests
--   ✅ Access Approval/Rejection
--   ✅ PostgreSQL Database Integration
--   ✅ Video Upload & Processing
--   ✅ Asynchronous AI Video Processing
--   ✅ Pose Estimation
--   ✅ Skeleton Tracking
--   ✅ Biomechanics Analysis
--   ✅ Movement Quality Assessment
--   ✅ Injury Risk Prediction
--   ✅ Risk Scoring
--   ✅ Corrective Recommendations
--   ✅ Processed Skeleton Video
--   ✅ Downloadable PDF Reports
--   ✅ Analysis History
--   ✅ Interactive Dashboard
--   ✅ Notifications
--   ✅ Admin Management
--   ✅ Account Revocation
--   ✅ Gemini 3.6 Flash AI Chat
--   ✅ Authorized AI Data Access
--   ✅ Admin AI Chat Restriction
--   ✅ Dockerized Backend
--   ✅ Dockerized Frontend
--   ✅ PostgreSQL Docker Container
--   ✅ Docker Compose
--   ✅ Container Health Checks
+- ✅ User Registration & Login
+- ✅ JWT Authentication
+- ✅ Google Authentication
+- ✅ Forgot Password (Email OTP)
+- ✅ Unique Username System
+- ✅ Athlete Profile Management
+- ✅ PostgreSQL Database Integration
+- ✅ Video Upload & Processing
+- ✅ Asynchronous AI Video Processing
+- ✅ Pose Estimation
+- ✅ Skeleton Tracking
+- ✅ Biomechanics Analysis
+- ✅ Movement Quality Assessment
+- ✅ Injury Risk Prediction
+- ✅ Risk Scoring
+- ✅ Corrective Recommendations
+- ✅ Processed Skeleton Video Generation
+- ✅ Downloadable PDF Reports
+- ✅ Analysis History
+- ✅ Interactive Dashboard
+- ✅ Enhanced Analysis Visualization
+- ✅ Analysis Charts and Bar Graphs
+- ✅ AI Chat Assistant
+- ✅ Admin Analytics Dashboard
+- ✅ User Management
+- ✅ User Account Revoke & Reactivate
+- ✅ Access Request Management
+- ✅ Contact Support
+- ✅ User-to-Admin Support Messaging
+- ✅ Admin Support Replies
+- ✅ Support Request Resolution
+- ✅ Docker Deployment
+- ✅ PostgreSQL Docker Container
+- ✅ FastAPI Docker Container
+- ✅ React + Nginx Docker Container
 
+The project now provides an end-to-end platform for video-based sports
+movement analysis, injury-risk assessment, visualization, user
+collaboration, administrative management, AI assistance, and technical
+support.
 ------------------------------------------------------------------------
 
 # 👩‍💻 Developed By
