@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "../styles/upload.css";
+import {
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -60,6 +64,17 @@ const tdStyle = {
   verticalAlign: "top",
 };
 
+// NEW. Human-friendly labels for the breakdown chart's x-axis - the raw
+// keys (biomechanical_deviations, etc.) match risk_score_summary.breakdown
+// exactly, same source as the bullet list that already existed.
+const BREAKDOWN_LABELS = {
+  biomechanical_deviations: "Biomechanics",
+  movement_asymmetry: "Asymmetry",
+  historical_factors: "History",
+  training_load: "Training Load",
+  fatigue: "Fatigue",
+};
+
 function Results() {
   const query = useQuery();
   const navigate = useNavigate();
@@ -71,11 +86,6 @@ function Results() {
   const [videoError, setVideoError] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // NEW. Excel export - unlike the PDF report link (a plain <a href>
-  // hitting an unauthenticated static file route), the Excel endpoint
-  // requires the logged-in user's token, so it can't be a bare link.
-  // Fetch it as a blob via the authenticated `api` client, then trigger
-  // the browser's normal download behavior manually.
   const [excelDownloading, setExcelDownloading] = useState(false);
   const [excelError, setExcelError] = useState(null);
 
@@ -112,8 +122,6 @@ function Results() {
 
     let cancelled = false;
     let pollTimer = null;
-    let videoUrlRetries = 0;
-    const MAX_VIDEO_URL_RETRIES = 3;
 
     const fetchAnalysis = async (isFirstLoad) => {
       try {
@@ -124,26 +132,8 @@ function Results() {
         setAnalysis(res.data);
         setError(null);
 
-        // Still being processed on the server - check again in a few
-        // seconds. This is what lets the user navigate away and come back:
-        // this page just keeps asking "is it done yet?" independently of
-        // whatever else the user does in the meantime.
         if (res.data.status === "processing") {
           pollTimer = setTimeout(() => fetchAnalysis(false), 3000);
-        } else if (
-          res.data.status === "completed" &&
-          !res.data.processed_video_download &&
-          videoUrlRetries < MAX_VIDEO_URL_RETRIES
-        ) {
-          // Safety net for a backend race: status can in principle flip to
-          // "completed" a moment before the report row (which carries the
-          // video URL) is fully committed. A few retries a couple seconds
-          // apart cover that gap without polling forever - if it's still
-          // missing after MAX_VIDEO_URL_RETRIES, it's a genuine data
-          // problem, not a race, and the video-error UI below is the
-          // correct thing to show.
-          videoUrlRetries += 1;
-          pollTimer = setTimeout(() => fetchAnalysis(false), 2000);
         }
       } catch (err) {
         if (cancelled) return;
@@ -161,20 +151,13 @@ function Results() {
     };
   }, [analysisId]);
 
-  // Ticks once per second while processing, purely to show elapsed time and
-  // cycle through staged progress text - genuinely reassuring on a
-  // long-running task, and honest (it's not claiming false precision about
-  // what stage the pipeline is actually in server-side).
-  //
-  // Deliberately reads only analysis?.status (matching the dependency
-  // array below), not the full analysis object - adding the whole object
-  // to deps would restart this timer on every 3s poll response (even when
-  // status hasn't changed), which would break the elapsed-time counter.
+  const analysisStatus = analysis?.status;
+
   useEffect(() => {
-    if (analysis?.status !== "processing") return;
+    if (analysisStatus !== "processing") return;
     const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
-  }, [analysis?.status]);
+  }, [analysisStatus]);
 
   if (loading) {
     return (
@@ -304,7 +287,45 @@ function Results() {
   } = analysis;
 
   const rom = biomechanics?.range_of_motion || {};
+  // "Problem moment" flagged frames from the pose engine (knee valgus,
+  // asymmetry, abnormal range of motion) - already included in the
+  // existing biomechanics field, no separate API call needed. Each one is
+  // annotated with a circle on the exact joint(s) at fault, not just a
+  // plain skeleton snapshot.
+  const flaggedFrames = biomechanics?.flagged_frames || [];
+  // NEW. Evenly-spaced reference frames across the WHOLE clip, so the
+  // athlete sees the tracked skeleton through the entire motion (takeoff /
+  // mid-air / landing, etc.), not only the isolated flagged instants.
+  const movementPhaseFrames = biomechanics?.movement_phase_frames || [];
   const breakdown = risk_score_summary?.breakdown || {};
+
+  // NEW. Chart data derived straight from the same numbers already shown
+  // in the bullet list / table above each chart - never invented, just
+  // reshaped for recharts.
+  const breakdownChartData = Object.entries(breakdown).map(([key, value]) => ({
+    name: BREAKDOWN_LABELS[key] || key,
+    value: value ?? 0,
+  }));
+
+  const injuryChartData = injury_risks
+    ? Object.entries(injury_risks).map(([name, data]) => ({
+        name: displayInjuryName(name),
+        probability: data.probability ?? 0,
+        risk_level: data.risk_level,
+      }))
+    : [];
+
+  const riskLevelCounts = injury_risks
+    ? Object.values(injury_risks).reduce((acc, data) => {
+        const level = data.risk_level || "Unknown";
+        acc[level] = (acc[level] || 0) + 1;
+        return acc;
+      }, {})
+    : {};
+  const riskLevelPieData = Object.entries(riskLevelCounts).map(([level, count]) => ({
+    name: level,
+    value: count,
+  }));
 
   return (
     <div className="page">
@@ -335,7 +356,6 @@ function Results() {
                 width: "100%",
                 maxWidth: "640px",
                 aspectRatio: "16 / 9",
-                margin: "0 auto",
                 background: "#000",
                 borderRadius: "8px",
                 overflow: "hidden",
@@ -354,6 +374,126 @@ function Results() {
             </div>
           )}
         </div>
+
+        {/* ---------------- Risk Moments (annotated flagged frames) ---------------- */}
+        <div style={sectionStyle}>
+          <h3>Risk Moments</h3>
+          <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
+            The exact instants the pose engine flagged - the circled joint(s) and the line
+            connecting them show precisely where the issue is, with the measured value underneath.
+          </p>
+          {flaggedFrames.length === 0 ? (
+            <p style={{ color: "#64748B", fontSize: "13px" }}>
+              No specific movement issues were flagged in this session.
+            </p>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {flaggedFrames.map((f, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    background: "#F8FAFC",
+                  }}
+                >
+                  <img
+                    src={f.image_url}
+                    alt={f.issue}
+                    style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>{f.issue}</span>
+                      {f.severity != null && (
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            background: f.severity >= 1.5 ? "#FEE2E2" : "#FEF3C7",
+                            color: f.severity >= 1.5 ? "#991B1B" : "#92400E",
+                          }}
+                        >
+                          {f.severity}x
+                        </span>
+                      )}
+                    </div>
+                    {f.detail && (
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "3px" }}>{f.detail}</div>
+                    )}
+                    <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+                      {f.timestamp_seconds != null ? `${f.timestamp_seconds}s` : `frame ${f.frame_index}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ---------------- Movement Phases (whole-clip filmstrip) ---------------- */}
+        {movementPhaseFrames.length > 0 && (
+          <div style={sectionStyle}>
+            <h3>Movement Phases</h3>
+            <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
+              Reference frames spaced across the full movement, not just the flagged instants above -
+              so you can see how the skeleton tracked from start to finish.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {movementPhaseFrames.map((p, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    background: "#F8FAFC",
+                  }}
+                >
+                  <img
+                    src={p.image_url}
+                    alt={`Movement phase ${p.phase_number}`}
+                    style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>
+                      Phase {p.phase_number}
+                    </div>
+                    {p.issue ? (
+                      <>
+                        <div style={{ fontSize: "12px", color: "#DC2626", marginTop: "3px" }}>{p.issue}</div>
+                        {p.detail && (
+                          <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>{p.detail}</div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ fontSize: "12px", color: "#22C55E", marginTop: "3px" }}>Clean form</div>
+                    )}
+                    <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+                      {p.timestamp_seconds != null ? `${p.timestamp_seconds}s` : `frame ${p.frame_index}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={sectionStyle}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
@@ -397,6 +537,22 @@ function Results() {
                 </ul>
               </div>
             </div>
+
+            {/* NEW. Same breakdown numbers as the bullet list above, as a bar chart. */}
+            {breakdownChartData.length > 0 && (
+              <div style={{ ...cardStyle, marginTop: "16px" }}>
+                <strong style={{ fontSize: "13px", color: "#64748B" }}>Risk Factor Breakdown</strong>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={breakdownChartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v) => `${v}%`} />
+                    <Bar dataKey="value" fill="#2563EB" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )}
 
@@ -433,6 +589,54 @@ function Results() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* NEW. Two charts side by side: probability per category (bar,
+                color-coded by risk level) and how many categories fall into
+                each risk level (pie) - both derived from the same table above. */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "16px" }}>
+              {injuryChartData.length > 0 && (
+                <div style={cardStyle}>
+                  <strong style={{ fontSize: "13px", color: "#64748B" }}>Injury Probability by Category</strong>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={injuryChartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" height={50} />
+                      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(v) => `${v}%`} />
+                      <Bar dataKey="probability" radius={[6, 6, 0, 0]}>
+                        {injuryChartData.map((entry, i) => (
+                          <Cell key={i} fill={riskColor(entry.risk_level)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {riskLevelPieData.length > 0 && (
+                <div style={cardStyle}>
+                  <strong style={{ fontSize: "13px", color: "#64748B" }}>Categories by Risk Level</strong>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={riskLevelPieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={(e) => `${e.name} (${e.value})`}
+                      >
+                        {riskLevelPieData.map((entry, i) => (
+                          <Cell key={i} fill={riskColor(entry.name)} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         )}

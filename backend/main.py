@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database.database import engine, SessionLocal
 from database import models
-from routers import auth, athlete, upload, analysis, report, access_request, admin, notifications, chat
+from routers import auth, athlete, upload, analysis, report, access_request, admin, notifications, support, chat
 
 app = FastAPI(title="Sports Injury Risk Detection API")
 
@@ -71,6 +71,7 @@ app.include_router(report.router)
 app.include_router(access_request.router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
+app.include_router(support.router)
 app.include_router(chat.router)
 
 

@@ -1,18 +1,17 @@
 import json
 import logging
-import os
 import re
 import shutil
 import uuid
 from pathlib import Path
 from urllib.parse import quote
-
+ 
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
-
+ 
 from database import crud, models
 from database.database import SessionLocal
-
+ 
 from utils.skeleton_tracking import process_video_with_skeleton
 from utils.biomechanics import analyze_sequence_biomechanics
 from utils.movement_quality import generate_quality_report
@@ -23,25 +22,24 @@ from utils.injury_risk_engine import (
     generate_corrective_recommendations,
 )
 from services.anomaly_detection_service import detect_movement_anomalies
-from services import notification_service
-
+ 
 logger = logging.getLogger("uvicorn.error")
-
+ 
 # -----------------------------
 # Directories
 # -----------------------------
 UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
-
+ 
 PROCESSED_DIR = Path(__file__).parent.parent / "processed_videos"
 PROCESSED_DIR.mkdir(exist_ok=True)
-
+ 
 REPORTS_DIR = Path(__file__).parent.parent / "reports"
 REPORTS_DIR.mkdir(exist_ok=True)
-
-BASE_URL = os.getenv("BACKEND_PUBLIC_BASE_URL", "http://localhost:8000")
-
-
+ 
+BASE_URL = "http://127.0.0.1:8000"
+ 
+ 
 # -----------------------------
 # Helper Function
 # -----------------------------
@@ -54,8 +52,8 @@ def sanitize_stem(name: str) -> str:
     stem = Path(name).stem
     stem = re.sub(r"[^A-Za-z0-9_-]+", "_", stem).strip("_")
     return stem[:50] or "video"
-
-
+ 
+ 
 def _safe_json_load(raw, fallback):
     """
     Some analyses created before the overall_risk_score str()->json.dumps()
@@ -69,8 +67,8 @@ def _safe_json_load(raw, fallback):
         return json.loads(raw)
     except (json.JSONDecodeError, TypeError):
         return fallback
-
-
+ 
+ 
 def _get_athlete_history_biomechanics(db: Session, athlete_pk_id: int, exclude_analysis_id: int = None):
     """
     Fetches this athlete's past sessions and parses their stored
@@ -87,8 +85,8 @@ def _get_athlete_history_biomechanics(db: Session, athlete_pk_id: int, exclude_a
         if parsed:
             history.append(parsed)
     return history
-
-
+ 
+ 
 # ---------------------------------------------------------
 # FAST PATH - runs inside the request, must return quickly.
 # Only does the cheap part: save the file to disk, create placeholder DB
@@ -101,7 +99,7 @@ def create_pending_upload(video: UploadFile, athlete: models.Athlete, db: Sessio
     (pose tracking, biomechanics, PDF generation) happens afterward in
     process_video_analysis_background(), scheduled as a FastAPI
     BackgroundTask by the router.
-
+ 
     This MUST happen synchronously, in-request: video.file (the upload's
     underlying temp file) is only guaranteed valid for the duration of the
     request - by the time a background task runs, Starlette may have already
@@ -112,11 +110,11 @@ def create_pending_upload(video: UploadFile, athlete: models.Athlete, db: Sessio
     unique_id = uuid.uuid4().hex[:10]
     safe_stem = sanitize_stem(video.filename)
     stored_filename = f"{unique_id}_{safe_stem}{original_ext}"
-
+ 
     file_path = UPLOAD_DIR / stored_filename
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(video.file, buffer)
-
+ 
     video_record = crud.create_video(
         db,
         athlete_pk_id=athlete.id,
@@ -124,14 +122,14 @@ def create_pending_upload(video: UploadFile, athlete: models.Athlete, db: Sessio
         stored_filename=stored_filename,
         processed_filename=None,  # not known yet - the background task fills this in
     )
-
+ 
     analysis_record = crud.create_pending_analysis(
         db, athlete_pk_id=athlete.id, video_id=video_record.id
     )
-
+ 
     return video_record, analysis_record, file_path
-
-
+ 
+ 
 # ---------------------------------------------------------
 # SLOW PATH - runs in FastAPI's background task threadpool, AFTER the
 # upload response has already been sent to the client. Completely
@@ -151,7 +149,7 @@ def process_video_analysis_background(
     """
     Runs the actual pose tracking / biomechanics / injury risk / PDF
     pipeline, then updates the AnalysisResult row created earlier.
-
+ 
     IMPORTANT: uses its OWN database session (SessionLocal()), never the
     request-scoped one - that session is closed by the time this function
     runs (it's cleaned up right after the response is sent), so reusing it
@@ -170,19 +168,19 @@ def process_video_analysis_background(
             "injury_history": athlete.injury_history,
             "training_load": athlete.training_load,
         } if athlete else {}
-
+ 
         tracking_result = process_video_with_skeleton(
             file_path,
             output_folder=str(PROCESSED_DIR),
         )
-
+ 
         biomechanics = analyze_sequence_biomechanics(tracking_result["all_joints"])
         quality = generate_quality_report(biomechanics)
-
+ 
         injury_risks = predict_injury_risks(biomechanics, athlete_profile)
         risk_score_summary = calculate_weighted_risk_score(biomechanics, athlete_profile)
         recommendations = generate_corrective_recommendations(injury_risks)
-
+ 
         report_path = generate_biomechanics_report(
             athlete_name=athlete_name,
             filename=original_filename,
@@ -195,41 +193,49 @@ def process_video_analysis_background(
             injury_risks=injury_risks,
             risk_score_summary=risk_score_summary,
         )
-
+ 
         processed_video_name = Path(tracking_result["processed_video"]).name
         report_name = Path(report_path).name
-
+ 
         if not (PROCESSED_DIR / processed_video_name).exists():
             raise Exception(f"Processed video was not saved correctly: {processed_video_name}")
         if not (REPORTS_DIR / report_name).exists():
             raise Exception(f"Report was not saved correctly: {report_name}")
-
+ 
         processed_video_url = f"{BASE_URL}/processed-videos/{quote(processed_video_name, safe='')}"
         report_url = f"{BASE_URL}/reports/{quote(report_name, safe='')}"
 
+        # "Problem moment" flagged frames - already saved to disk in
+        # PROCESSED_DIR by process_video_with_skeleton (same folder the
+        # processed video lives in, already served by the existing
+        # /processed-videos/ route). Just need public URLs built the same
+        # way processed_video_url is built above, then folded into the
+        # biomechanics dict below so it flows to the frontend through the
+        # existing biomechanics JSON column - no new DB column, no new API
+        # response field to wire up separately.
+        flagged_frames_with_urls = [
+            {
+                **flagged,
+                "image_url": f"{BASE_URL}/processed-videos/{quote(flagged['filename'], safe='')}",
+            }
+            for flagged in tracking_result.get("flagged_frames", [])
+        ]
+        biomechanics["flagged_frames"] = flagged_frames_with_urls
+
+        # NEW. "Movement phase" reference frames - evenly spaced across the
+        # whole clip so the athlete sees more than just the isolated
+        # flagged instants. Same URL-building pattern as flagged frames above.
+        phase_frames_with_urls = [
+            {
+                **phase,
+                "image_url": f"{BASE_URL}/processed-videos/{quote(phase['filename'], safe='')}",
+            }
+            for phase in tracking_result.get("movement_phase_frames", [])
+        ]
+        biomechanics["movement_phase_frames"] = phase_frames_with_urls
+ 
         crud.update_video_processed_filename(db, video_id, processed_video_name)
-
-        # NEW ORDER: create_report MUST run before finalize_analysis_result.
-        # The frontend polls /analysis/{id} and stops polling for good the
-        # instant it sees status == "completed" (see Results.js) - it never
-        # checks again after that. finalize_analysis_result is what flips
-        # status to "completed". If that happened before this report row
-        # existed, a poll landing in that gap would permanently see
-        # processed_video_download: null, even though the report (and its
-        # video URL) shows up a moment later - the frontend would just
-        # never know, since it already stopped polling. Creating the report
-        # first closes that gap: by the time status is visible as
-        # "completed", the video URL is guaranteed to already be there.
-        crud.create_report(
-            db=db,
-            analysis_id=analysis_id,
-            report_name=report_name,
-            report_path=str(REPORTS_DIR / report_name),
-            report_url=report_url,
-            processed_video=processed_video_name,
-            processed_video_url=processed_video_url,
-        )
-
+ 
         crud.finalize_analysis_result(
             db,
             analysis_id=analysis_id,
@@ -239,34 +245,25 @@ def process_video_analysis_background(
             recommendations=recommendations,
             biomechanics=biomechanics,
         )
-
-        # NEW. Notification & Alert System - fires the two analysis-driven
-        # alert types (overall injury risk + per-category high-risk
-        # movement) if this session's results crossed the High/Critical
-        # threshold. Runs in this same background task/session, right
-        # after the results are persisted, so it always sees the final
-        # data. Never raises - a notification/email problem must not mark
-        # an otherwise-successful analysis as failed (see its own
-        # try/except around the email send).
-        try:
-            notification_service.notify_analysis_complete(
-                db,
-                analysis_id=analysis_id,
-                athlete=athlete,
-                risk_score_summary=risk_score_summary,
-                injury_risks=injury_risks,
-            )
-        except Exception:
-            logger.exception(f"Notification trigger failed for analysis {analysis_id}")
-
+ 
+        crud.create_report(
+            db=db,
+            analysis_id=analysis_id,
+            report_name=report_name,
+            report_path=str(REPORTS_DIR / report_name),
+            report_url=report_url,
+            processed_video=processed_video_name,
+            processed_video_url=processed_video_url,
+        )
+ 
     except Exception as e:
         logger.exception(f"Background video processing failed for analysis {analysis_id}")
         crud.mark_analysis_failed(db, analysis_id, f"{type(e).__name__}: {e}")
-
+ 
     finally:
         db.close()
-
-
+ 
+ 
 # -----------------------------
 # Reconstruct the JSON shape for GET /analysis/{id}
 # -----------------------------
@@ -274,7 +271,7 @@ def build_analysis_response(analysis, db: Session = None) -> dict:
     video = analysis.video
     report = analysis.reports[0] if analysis.reports else None
     athlete = analysis.athlete
-
+ 
     response = {
         "analysis_id": str(analysis.id),
         "video_id": video.id if video else None,
@@ -291,7 +288,7 @@ def build_analysis_response(analysis, db: Session = None) -> dict:
         "report_download": report.report_url if report else None,
         "processed_video_download": report.processed_video_url if report else None,
     }
-
+ 
     # Only compute anomaly detection when a db session is supplied (single
     # analysis view), and only once the analysis has actually completed -
     # skipped for bulk list endpoints (N+1 queries) and for
@@ -301,5 +298,5 @@ def build_analysis_response(analysis, db: Session = None) -> dict:
             db, analysis.athlete_pk_id, exclude_analysis_id=analysis.id
         )
         response["movement_anomalies"] = detect_movement_anomalies(response["biomechanics"], history)
-
+ 
     return response

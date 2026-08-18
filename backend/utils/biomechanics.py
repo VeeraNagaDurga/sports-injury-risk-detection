@@ -327,6 +327,97 @@ def analyze_biomechanics(joints):
     }
 
 
+# ---------------------------------------------------------
+# Per-Frame Issue Severity (for flagging "problem moment" frames)
+# ---------------------------------------------------------
+#
+# NEW. Reuses analyze_biomechanics() (single frame) above and its
+# already-established thresholds - does not invent any new ones:
+#   - knee valgus: deviation > 0.10 (see calculate_knee_valgus)
+#   - asymmetry: left/right angle difference >= 10 degrees (see calculate_symmetry)
+#   - range of motion: angle outside 30-170 degrees is "Abnormal" (see calculate_range_of_motion)
+#
+# Returns a list of issue dicts for this single frame:
+#   label          - human-readable issue name
+#   severity       - "how far past the threshold, as a ratio" (1.0 = right at
+#                    the threshold, 2.0 = twice as far past it, etc.) - lets
+#                    frames with different issue types be ranked against
+#                    each other on one common scale
+#   joint_keys     - which JointPoint keys (from extract_joint_coordinates)
+#                    are responsible for this issue, in draw order
+#   primary_joint  - the single joint_key to anchor a label/circle on
+#   detail         - the exact measured value, human-readable
+# Returns an empty list for a clean frame with no flagged issues.
+SYMMETRY_JOINTS = {
+    "elbow": ("LEFT_ELBOW", "RIGHT_ELBOW"),
+    "knee": ("LEFT_KNEE", "RIGHT_KNEE"),
+    "hip": ("LEFT_HIP", "RIGHT_HIP"),
+}
+
+ANGLE_JOINT_CHAINS = {
+    "left_elbow": ("LEFT_SHOULDER", "LEFT_ELBOW", "LEFT_WRIST"),
+    "right_elbow": ("RIGHT_SHOULDER", "RIGHT_ELBOW", "RIGHT_WRIST"),
+    "left_knee": ("LEFT_HIP", "LEFT_KNEE", "LEFT_ANKLE"),
+    "right_knee": ("RIGHT_HIP", "RIGHT_KNEE", "RIGHT_ANKLE"),
+    "left_hip": ("LEFT_SHOULDER", "LEFT_HIP", "LEFT_KNEE"),
+    "right_hip": ("RIGHT_SHOULDER", "RIGHT_HIP", "RIGHT_KNEE"),
+}
+
+
+def score_frame_issues(joints):
+    from utils.pose_estimation import ensure_joint_objects
+
+    obj_joints = ensure_joint_objects(joints)
+    result = analyze_biomechanics(obj_joints)
+    issues = []
+
+    knee_valgus = result["knee_valgus"]
+    if knee_valgus.get("left_knee") == "Valgus":
+        dev = abs(obj_joints["LEFT_KNEE"].x - obj_joints["LEFT_ANKLE"].x)
+        issues.append({
+            "label": "Left Knee Valgus",
+            "severity": round(dev / 0.10, 2),
+            "joint_keys": ["LEFT_KNEE", "LEFT_ANKLE"],
+            "primary_joint": "LEFT_KNEE",
+            "detail": f"knee-ankle deviation {round(dev, 3)} (threshold 0.10)",
+        })
+    if knee_valgus.get("right_knee") == "Valgus":
+        dev = abs(obj_joints["RIGHT_KNEE"].x - obj_joints["RIGHT_ANKLE"].x)
+        issues.append({
+            "label": "Right Knee Valgus",
+            "severity": round(dev / 0.10, 2),
+            "joint_keys": ["RIGHT_KNEE", "RIGHT_ANKLE"],
+            "primary_joint": "RIGHT_KNEE",
+            "detail": f"knee-ankle deviation {round(dev, 3)} (threshold 0.10)",
+        })
+
+    for joint_name, info in result["symmetry"].items():
+        if info["status"] == "Asymmetrical":
+            left_key, right_key = SYMMETRY_JOINTS.get(joint_name, (None, None))
+            issues.append({
+                "label": f"{joint_name.capitalize()} Asymmetry",
+                "severity": round(info["difference"] / 10.0, 2),
+                "joint_keys": [k for k in (left_key, right_key) if k],
+                "primary_joint": left_key,
+                "detail": f"{info['difference']}\u00b0 left/right difference (threshold 10\u00b0)",
+            })
+
+    for joint_name, info in result["range_of_motion"].items():
+        if info["status"] == "Abnormal":
+            angle = info["angle"]
+            distance_outside = (30 - angle) if angle < 30 else (angle - 170)
+            chain = ANGLE_JOINT_CHAINS.get(joint_name, ())
+            issues.append({
+                "label": f"{joint_name.replace('_', ' ').title()} Abnormal Range",
+                "severity": round(distance_outside / 10.0, 2),
+                "joint_keys": list(chain),
+                "primary_joint": chain[1] if len(chain) == 3 else (chain[0] if chain else None),
+                "detail": f"{angle}\u00b0 (normal range 30\u00b0-170\u00b0)",
+            })
+
+    return issues
+
+
 def analyze_sequence_biomechanics(joints_list):
     """
     Analyzes biomechanics over a sequence of frames.

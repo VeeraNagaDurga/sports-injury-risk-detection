@@ -249,3 +249,30 @@ class NotificationResponse(BaseModel):
 
 class UnreadCountResponse(BaseModel):
     unread_count: int
+
+
+class SupportMessageCreate(BaseModel):
+    subject: str
+    message: str
+    category: str
+
+
+class SupportMessageResponse(BaseModel):
+    id: int
+    user_id: int
+    subject: str
+    message: str
+    category: str
+    status: str
+    admin_reply: str | None = None
+    replied_at: _datetime | None = None
+    created_at: _datetime
+    sender_username: str | None = None
+    sender_name: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class SupportReplyRequest(BaseModel):
+    reply: str

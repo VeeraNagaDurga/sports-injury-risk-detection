@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database.database import get_db
 from database import crud, models, schemas
-from services import dashboard_service
+from services import dashboard_service, notification_service
 from services.auth_service import require_admin
 
 router = APIRouter(tags=["Admin"])
@@ -105,3 +105,107 @@ def revoke_user_account(
         message=f"{updated.name or updated.email}'s account has been revoked.",
         user=updated,
     )
+
+
+@router.post("/admin/users/{user_id}/reactivate", response_model=schemas.RevokeUserResponse)
+def reactivate_user_account(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    """
+    Reactivates a deactivated/removed user account.
+    """
+    user = crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.is_active:
+        raise HTTPException(status_code=400, detail="This account is already active.")
+
+    updated = crud.reactivate_user_account(db, user)
+
+    return schemas.RevokeUserResponse(
+        message=f"{updated.name or updated.email}'s account has been reactivated.",
+        user=updated,
+    )
+
+
+@router.get("/admin/support-messages", response_model=list[schemas.SupportMessageResponse])
+def list_support_messages(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    """
+    Lists all support messages submitted by users.
+    """
+    messages = crud.get_all_support_messages(db)
+    enriched = []
+    for msg in messages:
+        res = schemas.SupportMessageResponse.model_validate(msg)
+        sender = crud.get_user_by_id(db, msg.user_id)
+        res.sender_username = sender.username if sender else None
+        res.sender_name = sender.name if sender else None
+        enriched.append(res)
+    return enriched
+
+
+@router.patch("/admin/support-messages/{msg_id}/resolve", response_model=schemas.SupportMessageResponse)
+def resolve_support_ticket(
+    msg_id: int,
+    resolved: bool,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    """
+    Marks a support ticket as resolved or unresolved.
+    """
+    msg = crud.get_support_message_by_id(db, msg_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Support message not found")
+
+    status = "resolved" if resolved else "unresolved"
+    updated = crud.resolve_support_message(db, msg, status)
+
+    sender = crud.get_user_by_id(db, updated.user_id)
+    res = schemas.SupportMessageResponse.model_validate(updated)
+    res.sender_username = sender.username if sender else None
+    res.sender_name = sender.name if sender else None
+    return res
+
+
+@router.patch("/admin/support-messages/{msg_id}/reply", response_model=schemas.SupportMessageResponse)
+def reply_to_support_ticket(
+    msg_id: int,
+    body: schemas.SupportReplyRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    """
+    Sends an admin reply to a support ticket - also marks it resolved.
+    Notifies the original sender (bell icon + email) that their ticket
+    got a response.
+    """
+    msg = crud.get_support_message_by_id(db, msg_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Support message not found")
+
+    if not body.reply.strip():
+        raise HTTPException(status_code=400, detail="Reply cannot be empty.")
+
+    updated = crud.reply_to_support_message(db, msg, body.reply.strip())
+
+    sender = crud.get_user_by_id(db, updated.user_id)
+    if sender:
+        notification_service.notify_access_request(
+            db,
+            recipient=sender,
+            type="support_reply",
+            title="You have a reply to your support message",
+            message=f"Re: \"{updated.subject}\" - {current_user.name} replied: {updated.admin_reply[:150]}",
+        )
+
+    res = schemas.SupportMessageResponse.model_validate(updated)
+    res.sender_username = sender.username if sender else None
+    res.sender_name = sender.name if sender else None
+    return res

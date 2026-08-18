@@ -176,6 +176,13 @@ def revoke_user_account(db: Session, user: models.User):
     return user
 
 
+def reactivate_user_account(db: Session, user: models.User):
+    user.is_active = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def update_user_password(db: Session, user: models.User, new_hashed_password: str):
     user.hashed_password = new_hashed_password
     db.commit()
@@ -767,3 +774,72 @@ def get_valid_reset_token(db: Session, token: str):
 def mark_reset_token_used(db: Session, reset_token: models.PasswordResetToken):
     reset_token.used = True
     db.commit()
+
+# ---------------------------------------------------------
+# Support Messages
+# ---------------------------------------------------------
+def create_support_message(db: Session, user_id: int, subject: str, message: str, category: str):
+    db_msg = models.SupportMessage(
+        user_id=user_id,
+        subject=subject,
+        message=message,
+        category=category,
+        status="unresolved",
+    )
+    db.add(db_msg)
+    db.commit()
+    db.refresh(db_msg)
+    return db_msg
+
+
+def get_all_admins(db: Session):
+    """Every active Administrator account - used to fan out a
+    notification (bell + email) to all admins at once, e.g. when a new
+    support ticket comes in. Deactivated admin accounts are excluded
+    since they can't log in to see it anyway."""
+    return (
+        db.query(models.User)
+        .filter(models.User.role == "Administrator", models.User.is_active.is_(True))
+        .all()
+    )
+
+
+def get_support_messages_for_user(db: Session, user_id: int):
+    return (
+        db.query(models.SupportMessage)
+        .filter(models.SupportMessage.user_id == user_id)
+        .order_by(models.SupportMessage.created_at.desc())
+        .all()
+    )
+
+
+def get_all_support_messages(db: Session):
+    return (
+        db.query(models.SupportMessage)
+        .order_by(models.SupportMessage.created_at.desc())
+        .all()
+    )
+
+
+def get_support_message_by_id(db: Session, msg_id: int):
+    return db.query(models.SupportMessage).filter(models.SupportMessage.id == msg_id).first()
+
+
+def resolve_support_message(db: Session, msg: models.SupportMessage, status: str):
+    msg.status = status
+    db.commit()
+    db.refresh(msg)
+    return msg
+
+
+def reply_to_support_message(db: Session, msg: models.SupportMessage, reply: str):
+    """Sets the admin's reply and auto-marks the ticket resolved - an
+    admin replying is what actually closes the loop for the user, so
+    resolved should follow naturally rather than needing a second,
+    separate action."""
+    msg.admin_reply = reply
+    msg.replied_at = datetime.utcnow()
+    msg.status = "resolved"
+    db.commit()
+    db.refresh(msg)
+    return msg

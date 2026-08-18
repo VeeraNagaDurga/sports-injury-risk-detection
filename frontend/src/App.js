@@ -18,6 +18,7 @@ import AthleteProfile from "./pages/AthleteProfile";
 import UploadVideo from "./pages/UploadVideo";
 import Results from "./pages/Results";
 import AdminDashboard from "./pages/AdminDashboard";
+import Support from "./pages/Support";
 import ChatWidget from "./components/ChatWidget";
 
 function App() {
@@ -75,6 +76,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute>
+                  <Support />
                 </ProtectedRoute>
               }
             />

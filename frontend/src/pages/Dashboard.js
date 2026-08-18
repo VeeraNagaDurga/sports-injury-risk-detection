@@ -31,21 +31,72 @@ const TREND_COLORS = {
   Stable: "#64748B",
 };
 
-// NEW. FastAPI's error responses aren't always a plain string in
-// `detail` - validation errors (422s) send an ARRAY of objects like
-// [{ loc: ["body", "username"], msg: "field required", type: "..." }].
-// alert()-ing that directly just shows "[object Object]", which is what
-// was happening here - this makes every error actually readable instead.
-function getErrorMessage(error, fallback) {
-  const detail = error.response?.data?.detail;
-  if (!detail) return fallback;
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) {
-    return detail
-      .map((d) => (typeof d === "string" ? d : d.msg || JSON.stringify(d)))
-      .join("\n");
-  }
-  return typeof detail === "object" ? JSON.stringify(detail) : String(detail);
+// NEW. Tab navigation - replaces the old single long-scroll layout.
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "requests", label: "Access Requests" },
+  { key: "analyses", label: "My Analyses" },
+  { key: "profiles", label: "Athlete Profiles" },
+];
+
+function TabBar({ activeTab, setActiveTab, incomingPendingCount }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "4px",
+        borderBottom: "2px solid #E2E8F0",
+        marginBottom: "24px",
+        overflowX: "auto",
+      }}
+    >
+      {TABS.map((tab) => {
+        const isActive = activeTab === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              background: "transparent",
+              border: "none",
+              borderBottom: isActive ? "3px solid #2563EB" : "3px solid transparent",
+              color: isActive ? "#2563EB" : "#64748B",
+              fontWeight: isActive ? 700 : 600,
+              fontSize: "14px",
+              padding: "10px 18px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "-2px",
+            }}
+          >
+            {tab.label}
+            {tab.key === "requests" && incomingPendingCount > 0 && (
+              <span
+                style={{
+                  background: "#EF4444",
+                  color: "#fff",
+                  borderRadius: "999px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  minWidth: "18px",
+                  height: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 5px",
+                }}
+              >
+                {incomingPendingCount}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /**
@@ -71,7 +122,6 @@ function RiskTrendChart({ sessions }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto" }}>
-      {/* gridlines at 0/25/50/75/100 */}
       {[0, 25, 50, 75, 100].map((v) => {
         const y = padding + usableHeight - (v / maxScore) * usableHeight;
         return (
@@ -97,6 +147,8 @@ function Dashboard() {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isAthlete = currentUser.role === "Athlete";
 
+  const [activeTab, setActiveTab] = useState("overview");
+
   const [profiles, setProfiles] = useState([]);
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,12 +159,13 @@ function Dashboard() {
 
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
-  // NEW. Request Access now searches by unique username instead of
-  // Athlete ID (see the form below) - renamed to match what it actually
-  // holds. Athlete ID itself is untouched everywhere else on this page
-  // (profiles table, trends, analyses) - only this one input changed.
   const [requestUsername, setRequestUsername] = useState("");
   const [requestingAccess, setRequestingAccess] = useState(false);
+
+  const [usernameBannerDismissed, setUsernameBannerDismissed] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [settingUsername, setSettingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState(null);
 
   useEffect(() => {
     fetchProfiles();
@@ -120,10 +173,6 @@ function Dashboard() {
     fetchIncomingRequests();
     fetchOutgoingRequests();
 
-    // Poll the analyses list periodically so any "Processing..." rows
-    // flip to "Completed" on their own without needing a manual refresh -
-    // this is what lets you check on an in-progress upload from here
-    // instead of needing to keep the original Results tab open.
     const interval = setInterval(() => {
       fetchAnalyses();
       fetchIncomingRequests();
@@ -156,17 +205,12 @@ function Dashboard() {
 
     setRequestingAccess(true);
     try {
-      // NEW. Sends { username } instead of { athlete_id } - the backend
-      // looks the target user up by their unique username now, per the
-      // updated Request Access flow. The request record itself still
-      // tracks the athlete by Athlete ID internally; this is only how
-      // it's found at request-creation time.
       const res = await api.post("/access-requests", { username: requestUsername.trim() });
       alert(res.data.message);
       setRequestUsername("");
       fetchOutgoingRequests();
     } catch (error) {
-      alert(getErrorMessage(error, "Failed to send access request."));
+      alert(error.response?.data?.detail || "Failed to send access request.");
     } finally {
       setRequestingAccess(false);
     }
@@ -178,7 +222,7 @@ function Dashboard() {
       fetchIncomingRequests();
       fetchProfiles();
     } catch (error) {
-      alert(getErrorMessage(error, "Failed to approve request."));
+      alert(error.response?.data?.detail || "Failed to approve request.");
     }
   };
 
@@ -187,7 +231,7 @@ function Dashboard() {
       await api.post(`/access-requests/${requestId}/deny`);
       fetchIncomingRequests();
     } catch (error) {
-      alert(getErrorMessage(error, "Failed to deny request."));
+      alert(error.response?.data?.detail || "Failed to deny request.");
     }
   };
 
@@ -200,7 +244,7 @@ function Dashboard() {
       fetchIncomingRequests();
       fetchProfiles();
     } catch (error) {
-      alert(getErrorMessage(error, "Failed to revoke access."));
+      alert(error.response?.data?.detail || "Failed to revoke access.");
     }
   };
 
@@ -229,10 +273,10 @@ function Dashboard() {
       try {
         await api.delete(`/athlete-profile/${athlete_id}`);
         setProfiles(profiles.filter(p => p.athlete_id !== athlete_id));
-        fetchAnalyses(); // that athlete's analyses are gone too now (cascade delete)
+        fetchAnalyses();
       } catch (error) {
         console.error("Error deleting profile:", error);
-        const errorMessage = getErrorMessage(error, "Failed to delete profile from database");
+        const errorMessage = error.response?.data?.detail || "Failed to delete profile from database";
         alert(errorMessage);
       }
     }
@@ -251,7 +295,7 @@ function Dashboard() {
       fetchAnalyses();
     } catch (error) {
       console.error("Error deleting video/analysis:", error);
-      const errorMessage = getErrorMessage(error, "Failed to delete this video.");
+      const errorMessage = error.response?.data?.detail || "Failed to delete this video.";
       alert(errorMessage);
     }
   };
@@ -264,9 +308,28 @@ function Dashboard() {
       const res = await api.get(`/athlete-profile/${encodeURIComponent(athlete_id)}/trends`);
       setTrendsData(res.data);
     } catch (error) {
-      setTrendsError(getErrorMessage(error, "Failed to load trend data."));
+      setTrendsError(error.response?.data?.detail || "Failed to load trend data.");
     } finally {
       setTrendsLoading(false);
+    }
+  };
+
+  const handleSetUsername = async (e) => {
+    e.preventDefault();
+    const trimmed = usernameInput.trim();
+    if (!trimmed) return;
+
+    setSettingUsername(true);
+    setUsernameError(null);
+    try {
+      const res = await api.patch("/users/me/username", { username: trimmed });
+      const updatedUser = { ...currentUser, username: res.data.username };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUsernameBannerDismissed(true);
+    } catch (error) {
+      setUsernameError(error.response?.data?.detail || "Failed to set username.");
+    } finally {
+      setSettingUsername(false);
     }
   };
 
@@ -275,6 +338,9 @@ function Dashboard() {
     const level = a.risk_score_summary?.risk_level;
     return level === "High" || level === "Critical";
   }).length;
+
+  const showUsernameBanner = !currentUser.username && !usernameBannerDismissed;
+  const incomingPendingCount = incomingRequests.filter((r) => r.status === "pending").length;
 
   return (
     <div className="page">
@@ -288,313 +354,346 @@ function Dashboard() {
           AI Sports Injury Detection Overview
         </p>
 
-        {/* NEW. Username banner - shows the signed-in user's own unique
-            username (falls back gracefully if it's ever missing from the
-            stored user object, e.g. an older session predating this
-            feature). Purely informational, doesn't affect any request. */}
-        {currentUser.username && (
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              marginTop: "4px",
-              marginBottom: "20px",
-              padding: "6px 14px",
-              borderRadius: "999px",
-              backgroundColor: "#EFF6FF",
-              border: "1px solid #BFDBFE",
-            }}
-          >
-            <span style={{ color: "#64748B", fontSize: "13px" }}>Signed in as</span>
-            <span style={{ color: "#2563EB", fontSize: "14px", fontWeight: 700 }}>
-              @{currentUser.username}
-            </span>
-          </div>
-        )}
-
-        <div className="dashboard-grid">
-
-          <StatCard
-            title="Saved Athletes"
-            value={profiles.length}
-            icon={<FaUsers />}
-            color="#2563EB"
-          />
-
-          <StatCard
-            title="Total Videos"
-            value={analyses.length}
-            icon={<FaVideo />}
-            color="#22C55E"
-          />
-
-          <StatCard
-            title="High Risk Cases"
-            value={highRiskCount}
-            icon={<FaHeartbeat />}
-            color="#EF4444"
-          />
-
-          <StatCard
-            title="Currently Processing"
-            value={processingCount}
-            icon={<FaHourglassHalf />}
-            color="#F59E0B"
-          />
-
-        </div>
-
-        {/* ---------------- Request Access to Another Athlete ---------------- */}
-        {!isAthlete && (
-          <div className="analytics-card" style={{ marginBottom: "24px" }}>
-            <h2>Request Access to an Athlete</h2>
+        {/* ---------------- Set Username Banner - always visible regardless of tab ---------------- */}
+        {showUsernameBanner && (
+          <div className="analytics-card" style={{ marginBottom: "24px", border: "1px solid #2563EB" }}>
+            <h2>Set your username</h2>
             <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
-              Enter the athlete's username to request read-only access to their analysis history.
-              They'll need to approve it before you can see anything.
+              Your account doesn't have a username yet. Others use this to find and request
+              access to your athlete data - set one to be discoverable.
             </p>
-            <form onSubmit={requestAccess} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <form onSubmit={handleSetUsername} style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-start" }}>
               <input
                 className="form-control"
                 style={{ maxWidth: "240px" }}
-                placeholder="Athlete Username (e.g. veera123)"
-                value={requestUsername}
-                onChange={(e) => setRequestUsername(e.target.value)}
+                placeholder="Choose a username"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
               />
-              <button className="btn" type="submit" disabled={requestingAccess || !requestUsername.trim()}>
-                {requestingAccess ? "Sending..." : "Send Request"}
+              <button className="btn" type="submit" disabled={settingUsername || !usernameInput.trim()}>
+                {settingUsername ? "Saving..." : "Save Username"}
+              </button>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setUsernameBannerDismissed(true)}
+              >
+                Later
               </button>
             </form>
+            {usernameError && (
+              <p style={{ color: "#DC2626", fontSize: "13px", marginTop: "8px" }}>{usernameError}</p>
+            )}
           </div>
         )}
 
-        {/* ---------------- My Sent Requests (outgoing) ---------------- */}
-        {outgoingRequests.length > 0 && (
-          <div className="analytics-card" style={{ marginBottom: "24px" }}>
-            <h2>My Access Requests</h2>
-            <div className="profiles-table-wrapper">
-              <table className="profiles-table">
-                <thead>
-                  <tr>
-                    <th>Athlete</th>
-                    <th>Status</th>
-                    <th>Can Upload</th>
-                    <th>Requested</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {outgoingRequests.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.athlete_id}</td>
-                      <td style={{ color: STATUS_COLORS[r.status] || "#334155", fontWeight: 700, textTransform: "capitalize" }}>
-                        {r.status}
-                      </td>
-                      <td>{r.can_upload ? "Yes" : "No"}</td>
-                      <td>{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* ---------------- NEW: Tab Navigation ---------------- */}
+        <TabBar activeTab={activeTab} setActiveTab={setActiveTab} incomingPendingCount={incomingPendingCount} />
+
+        {/* ============================================================
+            TAB: Overview
+        ============================================================ */}
+        {activeTab === "overview" && (
+          <>
+            <div className="dashboard-grid">
+              <StatCard
+                title="Saved Athletes"
+                value={profiles.length}
+                icon={<FaUsers />}
+                color="#2563EB"
+              />
+              <StatCard
+                title="Total Videos"
+                value={analyses.length}
+                icon={<FaVideo />}
+                color="#22C55E"
+              />
+              <StatCard
+                title="High Risk Cases"
+                value={highRiskCount}
+                icon={<FaHeartbeat />}
+                color="#EF4444"
+              />
+              <StatCard
+                title="Currently Processing"
+                value={processingCount}
+                icon={<FaHourglassHalf />}
+                color="#F59E0B"
+              />
             </div>
-          </div>
+
+            {!isAthlete && (
+              <div className="analytics-card" style={{ marginTop: "24px" }}>
+                <h2>Request Access to an Athlete</h2>
+                <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
+                  Enter the athlete's username to request read-only access to their analysis history.
+                  They'll need to approve it before you can see anything.
+                </p>
+                <form onSubmit={requestAccess} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <input
+                    className="form-control"
+                    style={{ maxWidth: "240px" }}
+                    placeholder="Athlete Username (e.g. veera123)"
+                    value={requestUsername}
+                    onChange={(e) => setRequestUsername(e.target.value)}
+                  />
+                  <button className="btn" type="submit" disabled={requestingAccess || !requestUsername.trim()}>
+                    {requestingAccess ? "Sending..." : "Send Request"}
+                  </button>
+                </form>
+              </div>
+            )}
+          </>
         )}
 
-        {/* ---------------- Incoming Access Requests (people wanting access to athletes I own) ---------------- */}
-        {incomingRequests.length > 0 && (
-          <div className="analytics-card" style={{ marginBottom: "24px" }}>
-            <h2>Access Requests to Your Athletes</h2>
+        {/* ============================================================
+            TAB: Access Requests
+        ============================================================ */}
+        {activeTab === "requests" && (
+          <>
+            {outgoingRequests.length > 0 && (
+              <div className="analytics-card" style={{ marginBottom: "24px" }}>
+                <h2>My Access Requests</h2>
+                <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
+                  Requests you've sent, and their current status.
+                </p>
+                <div className="profiles-table-wrapper">
+                  <table className="profiles-table">
+                    <thead>
+                      <tr>
+                        <th>Athlete</th>
+                        <th>Status</th>
+                        <th>Can Upload</th>
+                        <th>Requested</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {outgoingRequests.map((r) => (
+                        <tr key={r.id}>
+                          <td>{r.athlete_id}</td>
+                          <td style={{ color: STATUS_COLORS[r.status] || "#334155", fontWeight: 700, textTransform: "capitalize" }}>
+                            {r.status}
+                          </td>
+                          <td>{r.can_upload ? "Yes" : "No"}</td>
+                          <td>{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="analytics-card">
+              <h2>Access Requests to Your Athletes</h2>
+              <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
+                People asking to view your athlete's data. Approving grants read-only access
+                (optionally including upload) until you revoke it.
+              </p>
+              {incomingRequests.length === 0 ? (
+                <p>No access requests yet.</p>
+              ) : (
+                <div className="profiles-table-wrapper">
+                  <table className="profiles-table">
+                    <thead>
+                      <tr>
+                        <th>Athlete</th>
+                        <th>Requested By</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incomingRequests.map((r) => (
+                        <tr key={r.id}>
+                          <td>{r.athlete_id}</td>
+                          <td>{r.requested_by_name || r.requested_by_email}</td>
+                          <td>{r.requested_by_username || "—"}</td>
+                          <td>{r.requested_by_role}</td>
+                          <td style={{ color: STATUS_COLORS[r.status] || "#334155", fontWeight: 700, textTransform: "capitalize" }}>
+                            {r.status}
+                          </td>
+                          <td>
+                            {r.status === "pending" && (
+                              <>
+                                <button className="btn-view" onClick={() => approveRequest(r.id, false)}>
+                                  Approve (view only)
+                                </button>
+                                <button
+                                  className="btn-view"
+                                  style={{ marginLeft: "6px" }}
+                                  onClick={() => approveRequest(r.id, true)}
+                                >
+                                  Approve + Upload
+                                </button>
+                                <button
+                                  className="btn-delete"
+                                  style={{ marginLeft: "6px" }}
+                                  onClick={() => denyRequest(r.id)}
+                                >
+                                  Deny
+                                </button>
+                              </>
+                            )}
+                            {r.status === "approved" && (
+                              <button className="btn-delete" onClick={() => revokeRequest(r.id)}>
+                                Revoke Access
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ============================================================
+            TAB: My Analyses
+        ============================================================ */}
+        {activeTab === "analyses" && (
+          <div className="analytics-card">
+            <h2>My Analyses</h2>
             <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
-              People asking to view your athlete's data. Approving grants read-only access
-              (optionally including upload) until you revoke it.
+              Every video you've uploaded, including ones still processing in the
+              background - click into any of them anytime, from anywhere.
             </p>
-            <div className="profiles-table-wrapper">
-              <table className="profiles-table">
-                <thead>
-                  <tr>
-                    <th>Athlete</th>
-                    <th>Requested By</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {incomingRequests.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.athlete_id}</td>
-                      <td>{r.requested_by_name || r.requested_by_email}</td>
-                      <td>{r.requested_by_role}</td>
-                      <td style={{ color: STATUS_COLORS[r.status] || "#334155", fontWeight: 700, textTransform: "capitalize" }}>
-                        {r.status}
-                      </td>
-                      <td>
-                        {r.status === "pending" && (
-                          <>
-                            <button className="btn-view" onClick={() => approveRequest(r.id, false)}>
-                              Approve (view only)
-                            </button>
-                            <button
-                              className="btn-view"
-                              style={{ marginLeft: "6px" }}
-                              onClick={() => approveRequest(r.id, true)}
-                            >
-                              Approve + Upload
-                            </button>
-                            <button
-                              className="btn-delete"
-                              style={{ marginLeft: "6px" }}
-                              onClick={() => denyRequest(r.id)}
-                            >
-                              Deny
-                            </button>
-                          </>
-                        )}
-                        {r.status === "approved" && (
-                          <button className="btn-delete" onClick={() => revokeRequest(r.id)}>
-                            Revoke Access
-                          </button>
-                        )}
-                      </td>
+
+            {analyses.length === 0 ? (
+              <p>No videos uploaded yet. Go to Upload to analyze your first video.</p>
+            ) : (
+              <div className="profiles-table-wrapper">
+                <table className="profiles-table">
+                  <thead>
+                    <tr>
+                      <th>Video</th>
+                      <th>Athlete</th>
+                      <th>Status</th>
+                      <th>Risk Level</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {analyses.slice().reverse().map((a) => (
+                      <tr key={a.analysis_id}>
+                        <td>{a.filename || "—"}</td>
+                        <td>{a.athlete_id || "—"}</td>
+                        <td style={{ color: STATUS_COLORS[a.status] || "#334155", fontWeight: 700 }}>
+                          {statusLabel(a.status)}
+                        </td>
+                        <td>{a.risk_score_summary?.risk_level || "—"}</td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => navigate(`/results?analysis_id=${encodeURIComponent(a.analysis_id)}`)}
+                          >
+                            <FaExternalLinkAlt style={{ marginRight: "6px" }} />
+                            {a.status === "processing" ? "Check status" : "View"}
+                          </button>
+                          <button
+                            className="btn-delete"
+                            disabled={a.status === "processing"}
+                            title={a.status === "processing" ? "Can't delete while still processing" : "Delete this video and its analysis/report"}
+                            style={a.status === "processing" ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
+                            onClick={() => deleteAnalysis(a.video_id, a.filename)}
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ---------------- My Analyses (in-progress + completed) ---------------- */}
-        <div className="analytics-card" style={{ marginBottom: "24px" }}>
-          <h2>My Analyses</h2>
-          <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-8px" }}>
-            Every video you've uploaded, including ones still processing in the
-            background - click into any of them anytime, from anywhere.
-          </p>
+        {/* ============================================================
+            TAB: Athlete Profiles
+        ============================================================ */}
+        {activeTab === "profiles" && (
+          <div className="analytics-card">
+            <h2>Saved Athlete Profiles</h2>
 
-          {analyses.length === 0 ? (
-            <p>No videos uploaded yet. Go to Upload to analyze your first video.</p>
-          ) : (
-            <div className="profiles-table-wrapper">
-              <table className="profiles-table">
-                <thead>
-                  <tr>
-                    <th>Video</th>
-                    <th>Athlete</th>
-                    <th>Status</th>
-                    <th>Risk Level</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analyses.slice().reverse().map((a) => (
-                    <tr key={a.analysis_id}>
-                      <td>{a.filename || "—"}</td>
-                      <td>{a.athlete_id || "—"}</td>
-                      <td style={{ color: STATUS_COLORS[a.status] || "#334155", fontWeight: 700 }}>
-                        {statusLabel(a.status)}
-                      </td>
-                      <td>{a.risk_score_summary?.risk_level || "—"}</td>
-                      <td>
-                        <button
-                          className="btn-view"
-                          onClick={() => navigate(`/results?analysis_id=${encodeURIComponent(a.analysis_id)}`)}
-                        >
-                          <FaExternalLinkAlt style={{ marginRight: "6px" }} />
-                          {a.status === "processing" ? "Check status" : "View"}
-                        </button>
-                        <button
-                          className="btn-delete"
-                          disabled={a.status === "processing"}
-                          title={a.status === "processing" ? "Can't delete while still processing" : "Delete this video and its analysis/report"}
-                          style={a.status === "processing" ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
-                          onClick={() => deleteAnalysis(a.video_id, a.filename)}
-                        >
-                          <FaTrash />
-                        </button>
-                      </td>
+            {loading ? (
+              <p>Loading profiles...</p>
+            ) : profiles.length === 0 ? (
+              <p>No athlete profiles saved yet. Go to Athlete Profile to create one.</p>
+            ) : (
+              <div className="profiles-table-wrapper">
+                <table className="profiles-table">
+                  <thead>
+                    <tr>
+                      <th>Athlete ID</th>
+                      <th>Sport Type</th>
+                      <th>Position</th>
+                      <th>Age</th>
+                      <th>Height</th>
+                      <th>Weight</th>
+                      <th>Access</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="analytics-card">
-          <h2>Saved Athlete Profiles</h2>
-          
-          {loading ? (
-            <p>Loading profiles...</p>
-          ) : profiles.length === 0 ? (
-            <p>No athlete profiles saved yet. Go to Athlete Profile to create one.</p>
-          ) : (
-            <div className="profiles-table-wrapper">
-              <table className="profiles-table">
-                <thead>
-                  <tr>
-                    <th>Athlete ID</th>
-                    <th>Sport Type</th>
-                    <th>Position</th>
-                    <th>Age</th>
-                    <th>Height</th>
-                    <th>Weight</th>
-                    <th>Access</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profiles.map((profile) => (
-                    <tr key={profile.athlete_id}>
-                      <td><strong>{profile.athlete_id}</strong></td>
-                      <td>{profile.sport_type}</td>
-                      <td>{profile.position || "N/A"}</td>
-                      <td>{profile.age || "N/A"}</td>
-                      <td>{profile.height || "N/A"}</td>
-                      <td>{profile.weight || "N/A"}</td>
-                      <td>
-                        {profile.is_owner ? (
-                          <span style={{ color: "#2563EB", fontWeight: 600, fontSize: "12px" }}>Owner</span>
-                        ) : (
-                          <span style={{ color: "#64748B", fontWeight: 600, fontSize: "12px" }}>Shared (view only)</span>
-                        )}
-                      </td>
-                      <td>
-                        <button 
-                          className="btn-view"
-                          onClick={() => setSelectedProfile(profile)}
-                        >
-                          View
-                        </button>
-                        <button
-                          className="btn-view"
-                          style={{ marginLeft: "6px" }}
-                          onClick={() => fetchTrends(profile.athlete_id)}
-                        >
-                          Trends
-                        </button>
-                        {profile.is_owner && (
-                          <>
-                            <button 
-                              className="btn-delete"
-                              onClick={() => deleteProfile(profile.athlete_id)}
-                            >
-                              <FaTrash />
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {profiles.map((profile) => (
+                      <tr key={profile.athlete_id}>
+                        <td><strong>{profile.athlete_id}</strong></td>
+                        <td>{profile.sport_type}</td>
+                        <td>{profile.position || "N/A"}</td>
+                        <td>{profile.age || "N/A"}</td>
+                        <td>{profile.height || "N/A"}</td>
+                        <td>{profile.weight || "N/A"}</td>
+                        <td>
+                          {profile.is_owner ? (
+                            <span style={{ color: "#2563EB", fontWeight: 600, fontSize: "12px" }}>Owner</span>
+                          ) : (
+                            <span style={{ color: "#64748B", fontWeight: 600, fontSize: "12px" }}>Shared (view only)</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => setSelectedProfile(profile)}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn-view"
+                            style={{ marginLeft: "6px" }}
+                            onClick={() => fetchTrends(profile.athlete_id)}
+                          >
+                            Trends
+                          </button>
+                          {profile.is_owner && (
+                            <>
+                              <button
+                                className="btn-delete"
+                                onClick={() => deleteProfile(profile.athlete_id)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {selectedProfile && (
           <div className="modal-overlay" onClick={() => setSelectedProfile(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button 
+              <button
                 className="modal-close"
                 onClick={() => setSelectedProfile(null)}
               >

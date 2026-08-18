@@ -294,6 +294,29 @@ class Notification(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class SupportMessage(Base):
+    """
+    A user-submitted support ticket (POST /support/messages) - visible to
+    the sender (their own tickets only) and to Admins (all tickets, plus
+    the ability to reply via PATCH /admin/support-messages/{id}/reply,
+    which also marks it resolved, or toggle resolved/unresolved directly
+    via PATCH /admin/support-messages/{id}/resolve).
+    """
+    __tablename__ = "support_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    subject = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    category = Column(String, nullable=False)  # "Technical Issue", "Video Analysis Issue", "Account Issue", "Access Issue", "Other"
+    status = Column(String, default="unresolved", nullable=False)  # "unresolved", "resolved"
+    admin_reply = Column(Text, nullable=True)
+    replied_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
 class PasswordResetToken(Base):
     """
     Single-use, expiring tokens for the Forgot Password flow. DB-backed

@@ -71,6 +71,66 @@ def draw_pose(frame, results):
     return frame
 
 
+def draw_risk_markers(frame, joints, issue):
+    """
+    Marks exactly WHERE a flagged issue is on this frame - not just "this
+    frame has a problem", but which joint(s) are responsible and why.
+
+    joints : dict of JointPoint (normalized 0-1 x/y), as returned by
+             extract_joint_coordinates() / ensure_joint_objects()
+    issue  : one dict from biomechanics.score_frame_issues(), containing
+             "joint_keys" (which joints to circle, in draw order),
+             "primary_joint" (which one to anchor the text label on),
+             "label" and "detail" (the text to show), and "severity"
+             (used only to pick a colour - red once well past threshold,
+             amber closer to it).
+    """
+    h, w = frame.shape[:2]
+    color = (0, 0, 255) if issue.get("severity", 0) >= 1.5 else (0, 140, 255)  # BGR: red / amber
+
+    points_px = []
+    for key in issue.get("joint_keys") or []:
+        jp = joints.get(key)
+        if jp is None:
+            continue
+        px, py = int(jp.x * w), int(jp.y * h)
+        points_px.append((key, px, py))
+
+    if not points_px:
+        return frame
+
+    # Connect the joints involved (e.g. hip-knee-ankle) so the eye reads it
+    # as one flagged segment, not just isolated dots.
+    for (_, x1, y1), (_, x2, y2) in zip(points_px, points_px[1:]):
+        cv2.line(frame, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
+
+    primary_key = issue.get("primary_joint")
+    for key, px, py in points_px:
+        is_primary = key == primary_key
+        cv2.circle(frame, (px, py), 16 if is_primary else 9, color, 3 if is_primary else 2)
+
+    anchor = next(((px, py) for key, px, py in points_px if key == primary_key), points_px[0][1:])
+    lines = [issue.get("label", "")] + ([issue["detail"]] if issue.get("detail") else [])
+
+    text_x = min(max(anchor[0] + 18, 10), max(w - 260, 10))
+    text_y = max(anchor[1] - 26, 24)
+    for i, line in enumerate(lines):
+        y = text_y + i * 22
+        (tw, th), _ = cv2.getTextSize(line, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
+        cv2.rectangle(frame, (text_x - 5, y - th - 6), (text_x + tw + 5, y + 6), (0, 0, 0), -1)
+        cv2.putText(frame, line, (text_x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv2.LINE_AA)
+
+    return frame
+
+
+def label_frame(frame, text):
+    """Small top-left banner label (used for movement-phase reference frames)."""
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.65, 2)
+    cv2.rectangle(frame, (8, 8), (18 + tw, 20 + th), (30, 30, 30), -1)
+    cv2.putText(frame, text, (13, 16 + th), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+    return frame
+
+
 # ---------------------------------------------------------
 # Extract All Landmarks
 # ---------------------------------------------------------
