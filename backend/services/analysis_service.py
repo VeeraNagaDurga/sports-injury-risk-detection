@@ -204,6 +204,35 @@ def process_video_analysis_background(
  
         processed_video_url = f"{BASE_URL}/processed-videos/{quote(processed_video_name, safe='')}"
         report_url = f"{BASE_URL}/reports/{quote(report_name, safe='')}"
+
+        # "Problem moment" flagged frames - already saved to disk in
+        # PROCESSED_DIR by process_video_with_skeleton (same folder the
+        # processed video lives in, already served by the existing
+        # /processed-videos/ route). Just need public URLs built the same
+        # way processed_video_url is built above, then folded into the
+        # biomechanics dict below so it flows to the frontend through the
+        # existing biomechanics JSON column - no new DB column, no new API
+        # response field to wire up separately.
+        flagged_frames_with_urls = [
+            {
+                **flagged,
+                "image_url": f"{BASE_URL}/processed-videos/{quote(flagged['filename'], safe='')}",
+            }
+            for flagged in tracking_result.get("flagged_frames", [])
+        ]
+        biomechanics["flagged_frames"] = flagged_frames_with_urls
+
+        # NEW. "Movement phase" reference frames - evenly spaced across the
+        # whole clip so the athlete sees more than just the isolated
+        # flagged instants. Same URL-building pattern as flagged frames above.
+        phase_frames_with_urls = [
+            {
+                **phase,
+                "image_url": f"{BASE_URL}/processed-videos/{quote(phase['filename'], safe='')}",
+            }
+            for phase in tracking_result.get("movement_phase_frames", [])
+        ]
+        biomechanics["movement_phase_frames"] = phase_frames_with_urls
  
         crud.update_video_processed_filename(db, video_id, processed_video_name)
  
@@ -271,4 +300,3 @@ def build_analysis_response(analysis, db: Session = None) -> dict:
         response["movement_anomalies"] = detect_movement_anomalies(response["biomechanics"], history)
  
     return response
- 

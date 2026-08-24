@@ -2,26 +2,30 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "../styles/upload.css";
- 
+import {
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
+
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
- 
+
 const RISK_COLORS = {
   Low: "#22C55E",
   Moderate: "#F59E0B",
   High: "#EF4444",
   Critical: "#991B1B",
 };
- 
+
 function riskColor(level) {
   return RISK_COLORS[level] || "#334155";
 }
- 
+
 function displayInjuryName(name) {
   return name === "LowerBack" ? "Lower Back" : name;
 }
- 
+
 const PROCESSING_STAGES = [
   "Uploading and preparing video...",
   "Running pose estimation (MediaPipe)...",
@@ -31,13 +35,13 @@ const PROCESSING_STAGES = [
   "Predicting injury risk...",
   "Compiling PDF biomechanics report...",
 ];
- 
+
 function formatElapsed(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
- 
+
 const sectionStyle = { margin: "32px 0" };
 const cardStyle = {
   background: "#F8FAFC",
@@ -59,41 +63,75 @@ const tdStyle = {
   fontSize: "14px",
   verticalAlign: "top",
 };
- 
+
+// NEW. Human-friendly labels for the breakdown chart's x-axis - the raw
+// keys (biomechanical_deviations, etc.) match risk_score_summary.breakdown
+// exactly, same source as the bullet list that already existed.
+const BREAKDOWN_LABELS = {
+  biomechanical_deviations: "Biomechanics",
+  movement_asymmetry: "Asymmetry",
+  historical_factors: "History",
+  training_load: "Training Load",
+  fatigue: "Fatigue",
+};
+
 function Results() {
   const query = useQuery();
   const navigate = useNavigate();
   const analysisId = query.get("analysis_id");
- 
+
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [videoError, setVideoError] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
- 
+
+  const [excelDownloading, setExcelDownloading] = useState(false);
+  const [excelError, setExcelError] = useState(null);
+
+  const handleExcelExport = async () => {
+    setExcelDownloading(true);
+    setExcelError(null);
+    try {
+      const res = await api.get(`/analysis/${encodeURIComponent(analysisId)}/export/excel`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `analysis_${analysisId}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExcelError(
+        err.response?.data?.detail || "Failed to export Excel report. Please try again."
+      );
+    } finally {
+      setExcelDownloading(false);
+    }
+  };
+
   useEffect(() => {
     if (!analysisId) {
       setError("No analysis_id provided in URL.");
       setLoading(false);
       return;
     }
- 
+
     let cancelled = false;
     let pollTimer = null;
- 
+
     const fetchAnalysis = async (isFirstLoad) => {
       try {
         if (isFirstLoad) setLoading(true);
         const res = await api.get(`/analysis/${encodeURIComponent(analysisId)}`);
         if (cancelled) return;
- 
+
         setAnalysis(res.data);
         setError(null);
- 
-        // Still being processed on the server - check again in a few
-        // seconds. This is what lets the user navigate away and come back:
-        // this page just keeps asking "is it done yet?" independently of
-        // whatever else the user does in the meantime.
+
         if (res.data.status === "processing") {
           pollTimer = setTimeout(() => fetchAnalysis(false), 3000);
         }
@@ -104,25 +142,23 @@ function Results() {
         if (!cancelled && isFirstLoad) setLoading(false);
       }
     };
- 
+
     fetchAnalysis(true);
- 
+
     return () => {
       cancelled = true;
       if (pollTimer) clearTimeout(pollTimer);
     };
   }, [analysisId]);
- 
-  // Ticks once per second while processing, purely to show elapsed time and
-  // cycle through staged progress text - genuinely reassuring on a
-  // long-running task, and honest (it's not claiming false precision about
-  // what stage the pipeline is actually in server-side).
+
+  const analysisStatus = analysis?.status;
+
   useEffect(() => {
-    if (!analysis || analysis.status !== "processing") return;
+    if (analysisStatus !== "processing") return;
     const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
-  }, [analysis?.status]);
- 
+  }, [analysisStatus]);
+
   if (loading) {
     return (
       <div className="page">
@@ -132,7 +168,7 @@ function Results() {
       </div>
     );
   }
- 
+
   if (error) {
     return (
       <div className="page">
@@ -143,11 +179,11 @@ function Results() {
       </div>
     );
   }
- 
+
   if (analysis && analysis.status === "processing") {
     const stageIndex = Math.min(Math.floor(elapsedSeconds / 4), PROCESSING_STAGES.length - 1);
     const progressPct = Math.min(95, Math.round((elapsedSeconds / 60) * 100));
- 
+
     return (
       <div className="page">
         <style>{`
@@ -165,12 +201,12 @@ function Results() {
               animation: "results-spin 0.9s linear infinite",
             }}
           />
- 
+
           <h2 style={{ marginBottom: "6px" }}>Analyzing Your Video</h2>
           <p style={{ color: "#334155", fontWeight: 600, minHeight: "24px" }}>
             {PROCESSING_STAGES[stageIndex]}
           </p>
- 
+
           <div
             style={{
               width: "100%",
@@ -194,7 +230,7 @@ function Results() {
           <p style={{ color: "#94A3B8", fontSize: "13px" }}>
             Elapsed: {formatElapsed(elapsedSeconds)} — longer videos can take a minute or more.
           </p>
- 
+
           <div
             style={{
               background: "#F8FAFC",
@@ -211,7 +247,7 @@ function Results() {
             this browser tab. You're free to leave this page — nothing will be lost or
             interrupted, and you can check on it anytime from your Dashboard.
           </div>
- 
+
           <button
             className="btn"
             style={{ marginTop: "20px" }}
@@ -223,7 +259,7 @@ function Results() {
       </div>
     );
   }
- 
+
   if (analysis && analysis.status === "failed") {
     return (
       <div className="page">
@@ -236,7 +272,7 @@ function Results() {
       </div>
     );
   }
- 
+
   const {
     biomechanics,
     movement_quality,
@@ -249,10 +285,48 @@ function Results() {
     filename,
     athlete_name,
   } = analysis;
- 
+
   const rom = biomechanics?.range_of_motion || {};
+  // "Problem moment" flagged frames from the pose engine (knee valgus,
+  // asymmetry, abnormal range of motion) - already included in the
+  // existing biomechanics field, no separate API call needed. Each one is
+  // annotated with a circle on the exact joint(s) at fault, not just a
+  // plain skeleton snapshot.
+  const flaggedFrames = biomechanics?.flagged_frames || [];
+  // NEW. Evenly-spaced reference frames across the WHOLE clip, so the
+  // athlete sees the tracked skeleton through the entire motion (takeoff /
+  // mid-air / landing, etc.), not only the isolated flagged instants.
+  const movementPhaseFrames = biomechanics?.movement_phase_frames || [];
   const breakdown = risk_score_summary?.breakdown || {};
- 
+
+  // NEW. Chart data derived straight from the same numbers already shown
+  // in the bullet list / table above each chart - never invented, just
+  // reshaped for recharts.
+  const breakdownChartData = Object.entries(breakdown).map(([key, value]) => ({
+    name: BREAKDOWN_LABELS[key] || key,
+    value: value ?? 0,
+  }));
+
+  const injuryChartData = injury_risks
+    ? Object.entries(injury_risks).map(([name, data]) => ({
+        name: displayInjuryName(name),
+        probability: data.probability ?? 0,
+        risk_level: data.risk_level,
+      }))
+    : [];
+
+  const riskLevelCounts = injury_risks
+    ? Object.values(injury_risks).reduce((acc, data) => {
+        const level = data.risk_level || "Unknown";
+        acc[level] = (acc[level] || 0) + 1;
+        return acc;
+      }, {})
+    : {};
+  const riskLevelPieData = Object.entries(riskLevelCounts).map(([level, count]) => ({
+    name: level,
+    value: count,
+  }));
+
   return (
     <div className="page">
       <div className="container" style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto" }}>
@@ -260,7 +334,7 @@ function Results() {
         <p style={{ color: "#64748B" }}>
           {athlete_name ? `Athlete: ${athlete_name}` : null} {filename ? `— ${filename}` : null}
         </p>
- 
+
         {/* ---------------- Processed Video ---------------- */}
         <div style={sectionStyle}>
           <h3>Processed Video</h3>
@@ -282,7 +356,6 @@ function Results() {
                 width: "100%",
                 maxWidth: "640px",
                 aspectRatio: "16 / 9",
-                margin: "0 auto",
                 background: "#000",
                 borderRadius: "8px",
                 overflow: "hidden",
@@ -301,13 +374,145 @@ function Results() {
             </div>
           )}
         </div>
- 
+
+        {/* ---------------- Risk Moments (annotated flagged frames) ---------------- */}
         <div style={sectionStyle}>
-          <a href={report_download} target="_blank" rel="noreferrer" className="btn">
-            Download PDF Biomechanics Report
-          </a>
+          <h3>Risk Moments</h3>
+          <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
+            The exact instants the pose engine flagged - the circled joint(s) and the line
+            connecting them show precisely where the issue is, with the measured value underneath.
+          </p>
+          {flaggedFrames.length === 0 ? (
+            <p style={{ color: "#64748B", fontSize: "13px" }}>
+              No specific movement issues were flagged in this session.
+            </p>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {flaggedFrames.map((f, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    background: "#F8FAFC",
+                  }}
+                >
+                  <img
+                    src={f.image_url}
+                    alt={f.issue}
+                    style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>{f.issue}</span>
+                      {f.severity != null && (
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            background: f.severity >= 1.5 ? "#FEE2E2" : "#FEF3C7",
+                            color: f.severity >= 1.5 ? "#991B1B" : "#92400E",
+                          }}
+                        >
+                          {f.severity}x
+                        </span>
+                      )}
+                    </div>
+                    {f.detail && (
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "3px" }}>{f.detail}</div>
+                    )}
+                    <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+                      {f.timestamp_seconds != null ? `${f.timestamp_seconds}s` : `frame ${f.frame_index}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
- 
+
+        {/* ---------------- Movement Phases (whole-clip filmstrip) ---------------- */}
+        {movementPhaseFrames.length > 0 && (
+          <div style={sectionStyle}>
+            <h3>Movement Phases</h3>
+            <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
+              Reference frames spaced across the full movement, not just the flagged instants above -
+              so you can see how the skeleton tracked from start to finish.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {movementPhaseFrames.map((p, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    background: "#F8FAFC",
+                  }}
+                >
+                  <img
+                    src={p.image_url}
+                    alt={`Movement phase ${p.phase_number}`}
+                    style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>
+                      Phase {p.phase_number}
+                    </div>
+                    {p.issue ? (
+                      <>
+                        <div style={{ fontSize: "12px", color: "#DC2626", marginTop: "3px" }}>{p.issue}</div>
+                        {p.detail && (
+                          <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>{p.detail}</div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ fontSize: "12px", color: "#22C55E", marginTop: "3px" }}>Clean form</div>
+                    )}
+                    <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
+                      {p.timestamp_seconds != null ? `${p.timestamp_seconds}s` : `frame ${p.frame_index}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={sectionStyle}>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+            <a href={report_download} target="_blank" rel="noreferrer" className="btn">
+              Download PDF Biomechanics Report
+            </a>
+            <button
+              onClick={handleExcelExport}
+              disabled={excelDownloading}
+              className="btn-outline"
+            >
+              {excelDownloading ? "Exporting..." : "Export Excel Report"}
+            </button>
+          </div>
+          {excelError && (
+            <p style={{ color: "#DC2626", fontSize: "13px", marginTop: "8px" }}>{excelError}</p>
+          )}
+        </div>
+
         {/* ---------------- Injury Risk Evaluation ---------------- */}
         {risk_score_summary && (
           <div style={sectionStyle}>
@@ -332,9 +537,25 @@ function Results() {
                 </ul>
               </div>
             </div>
+
+            {/* NEW. Same breakdown numbers as the bullet list above, as a bar chart. */}
+            {breakdownChartData.length > 0 && (
+              <div style={{ ...cardStyle, marginTop: "16px" }}>
+                <strong style={{ fontSize: "13px", color: "#64748B" }}>Risk Factor Breakdown</strong>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={breakdownChartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v) => `${v}%`} />
+                    <Bar dataKey="value" fill="#2563EB" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )}
- 
+
         {/* ---------------- Predicted Injury Profile ---------------- */}
         {injury_risks && (
           <div style={sectionStyle}>
@@ -369,9 +590,57 @@ function Results() {
                 </tbody>
               </table>
             </div>
+
+            {/* NEW. Two charts side by side: probability per category (bar,
+                color-coded by risk level) and how many categories fall into
+                each risk level (pie) - both derived from the same table above. */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "16px" }}>
+              {injuryChartData.length > 0 && (
+                <div style={cardStyle}>
+                  <strong style={{ fontSize: "13px", color: "#64748B" }}>Injury Probability by Category</strong>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={injuryChartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" height={50} />
+                      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(v) => `${v}%`} />
+                      <Bar dataKey="probability" radius={[6, 6, 0, 0]}>
+                        {injuryChartData.map((entry, i) => (
+                          <Cell key={i} fill={riskColor(entry.risk_level)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {riskLevelPieData.length > 0 && (
+                <div style={cardStyle}>
+                  <strong style={{ fontSize: "13px", color: "#64748B" }}>Categories by Risk Level</strong>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={riskLevelPieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={(e) => `${e.name} (${e.value})`}
+                      >
+                        {riskLevelPieData.map((entry, i) => (
+                          <Cell key={i} fill={riskColor(entry.name)} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
           </div>
         )}
- 
+
         {/* ---------------- Movement Anomaly Detection ---------------- */}
         {movement_anomalies && (
           <div style={sectionStyle}>
@@ -379,7 +648,7 @@ function Results() {
             <p style={{ color: "#64748B", fontSize: "13px", marginTop: "-4px" }}>
               Compares this session against this athlete's own recent history - not just fixed thresholds.
             </p>
- 
+
             {movement_anomalies.status === "insufficient_history" ? (
               <div style={{ ...cardStyle, color: "#64748B" }}>
                 {movement_anomalies.message}
@@ -400,7 +669,7 @@ function Results() {
                     {movement_anomalies.sessions_compared === 1 ? "" : "s"})
                   </span>
                 </div>
- 
+
                 {movement_anomalies.anomalies.length > 0 && (
                   <div style={tableWrapStyle}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -435,7 +704,7 @@ function Results() {
             )}
           </div>
         )}
- 
+
         {/* ---------------- Movement Quality ---------------- */}
         {movement_quality && (
           <div style={sectionStyle}>
@@ -455,7 +724,7 @@ function Results() {
             )}
           </div>
         )}
- 
+
         {/* ---------------- Biomechanical Joint Performance ---------------- */}
         {Object.keys(rom).length > 0 && (
           <div style={sectionStyle}>
@@ -488,7 +757,7 @@ function Results() {
             </div>
           </div>
         )}
- 
+
         {/* ---------------- Corrective Recommendations ---------------- */}
         {recommendations && recommendations.length > 0 && (
           <div style={sectionStyle}>
@@ -511,5 +780,5 @@ function Results() {
     </div>
   );
 }
- 
+
 export default Results;
