@@ -1,0 +1,79 @@
+databases:
+  - name: sports-injury-db
+    databaseName: sports_injury_db
+    user: postgres
+    region: oregon
+    plan: starter
+
+services:
+  # ======================================================================
+  # Backend API Service (FastAPI + OpenCV + MediaPipe + Persistent Disk)
+  # ======================================================================
+  - type: web
+    name: sports-injury-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: sports-storage
+      mountPath: /var/data
+      sizeGB: 10
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sports-injury-db
+          property: connectionString
+      - key: STORAGE_DIR
+        value: /var/data
+      - key: PORT
+        value: 8000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: ADMIN_NAME
+        value: Administrator
+      # --- Set these manually in Render Dashboard ---
+      - key: FRONTEND_BASE_URL
+        sync: false
+      - key: BACKEND_PUBLIC_BASE_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_APP_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  # ======================================================================
+  # Frontend Static Service (React 19 SPA)
+  # ======================================================================
+  - type: static
+    name: sports-injury-frontend
+    region: oregon
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    publishPath: frontend/build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
