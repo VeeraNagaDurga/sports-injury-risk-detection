@@ -34,9 +34,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_BASE_URL
-        value: https://sports-injury-frontend.onrender.com
+        value: https://sports-injury-frontend-w22l.onrender.com
       - key: BACKEND_PUBLIC_BASE_URL
-        value: https://sports-injury-backend.onrender.com
+        value: https://sports-injury-risk-detection-oxc2.onrender.com
       - key: CORS_ALLOWED_ORIGINS
         value: https://sports-injury-frontend.onrender.com
       - key: GOOGLE_CLIENT_ID
@@ -75,6 +75,6 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        value: https://sports-injury-backend.onrender.com
+        value: https://sports-injury-risk-detection-oxc2.onrender.com
       - key: REACT_APP_GOOGLE_CLIENT_ID
         value: 236706862408-9p94cb371imoelc3s6as6ottl2f83ges.apps.googleusercontent.com
